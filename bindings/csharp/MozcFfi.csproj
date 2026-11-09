@@ -7,10 +7,21 @@
     <Version>0.1.0</Version>
     <Description>Unofficial C# bindings for Google's Mozc kana-kanji converter, in process.</Description>
     <PackageLicenseExpression>BSD-3-Clause</PackageLicenseExpression>
+    <Authors>Mara Schwartz</Authors>
+    <PackageTags>japanese;mozc;ime;kana-kanji</PackageTags>
+    <RepositoryUrl>https://github.com/Malorn44/mozc-ffi</RepositoryUrl>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
 
   <ItemGroup>
     <Compile Remove="tests/**" />
+  </ItemGroup>
+
+  <!-- Placed here by scripts/package.sh when it packs: each platform's native library, the
+       package's README and the notices. Not in the repository. -->
+  <ItemGroup>
+    <None Include="runtimes/**" Pack="true" PackagePath="runtimes/" />
+    <None Include="README.md;THIRD_PARTY_NOTICES.md" Condition="Exists('THIRD_PARTY_NOTICES.md')" Pack="true" PackagePath="" />
   </ItemGroup>
 
 </Project>
