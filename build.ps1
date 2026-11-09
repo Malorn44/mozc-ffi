@@ -69,7 +69,10 @@ try {
         Invoke-Checked python @('build_tools/update_deps.py', '--noqt', '--noninja', '--nowix', '--nondk')
     }
 
+    # The C++ runtime is linked in (as Mozc's own Windows binaries do), so the DLL needs no Visual C++
+    # Redistributable and can't pick up an older msvcp140.dll that its host process already loaded.
     Invoke-Checked $bazelisk @('build', '--config', 'release_build',
+        '--features=static_link_msvcrt', '--features=-dynamic_link_msvcrt',
         "--downloader_config=$(Join-Path $root 'bazel_downloader.cfg')", '//mozc_ffi:mozc_ffi.dll')
     New-Item -ItemType Directory -Force (Join-Path $root 'build') | Out-Null
     Copy-Item -Force 'bazel-bin\mozc_ffi\mozc_ffi.dll' (Join-Path $root 'build')

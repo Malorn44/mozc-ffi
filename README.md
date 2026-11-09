@@ -34,6 +34,8 @@ Mode. Build from a clone on a Windows drive (not `\\wsl.localhost`):
 .\build.ps1         # → build\mozc_ffi.dll
 ```
 
+The DLL links the C++ runtime statically, so it needs no Visual C++ Redistributable.
+
 ## Use
 
 ```python
