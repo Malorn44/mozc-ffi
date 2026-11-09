@@ -1,6 +1,6 @@
 """Tests for mozc_ffi against the library in build/ (or MOZC_FFI_LIBRARY).
 
-    python3 -m unittest discover -s python
+    python3 -m unittest discover -s bindings/python
 """
 
 from __future__ import annotations
@@ -12,7 +12,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent.parent
+ROOT = Path(__file__).resolve().parents[2]
 LIBRARY = "mozc_ffi.dll" if sys.platform == "win32" else "libmozc_ffi.so"
 os.environ.setdefault("MOZC_FFI_LIBRARY", str(ROOT / "build" / LIBRARY))
 

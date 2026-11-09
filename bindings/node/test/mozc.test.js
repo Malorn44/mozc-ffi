@@ -1,5 +1,5 @@
 'use strict';
-// Tests against the library in ../build (or MOZC_FFI_LIBRARY): npm test
+// Tests against the library in build/ (or MOZC_FFI_LIBRARY): npm test
 
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -7,7 +7,7 @@ const os = require('node:os');
 const path = require('node:path');
 const { test, after } = require('node:test');
 
-const root = path.resolve(__dirname, '..', '..');
+const root = path.resolve(__dirname, '..', '..', '..');
 process.env.MOZC_FFI_LIBRARY ||= path.join(root, 'build', process.platform === 'win32' ? 'mozc_ffi.dll' : 'libmozc_ffi.so');
 const { Mozc, ABI_VERSION } = require('..');
 

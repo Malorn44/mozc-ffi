@@ -1,4 +1,4 @@
-//! Tests against the library in ../build (or MOZC_FFI_LIBRARY): cargo test
+//! Tests against the library in build/ (or MOZC_FFI_LIBRARY): cargo test
 
 use std::path::{Path, PathBuf};
 use std::sync::{Mutex, MutexGuard, OnceLock};
@@ -6,7 +6,7 @@ use std::sync::{Mutex, MutexGuard, OnceLock};
 use mozc_ffi::{Mozc, Segment, ABI_VERSION};
 
 fn root() -> PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR")).parent().unwrap().to_path_buf()
+    Path::new(env!("CARGO_MANIFEST_DIR")).ancestors().nth(2).unwrap().to_path_buf()
 }
 
 fn library() -> PathBuf {

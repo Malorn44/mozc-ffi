@@ -1,6 +1,6 @@
-# Builds build\mozc_ffi.dll from Mozc at the commit in MOZC_COMMIT.
+# Builds build\mozc_ffi.dll from Mozc at the commit in scripts\MOZC_COMMIT.
 #
-#   .\build.ps1
+#   .\scripts\build.ps1
 #
 # Needs: bazelisk on PATH (or $env:BAZELISK), Python 3.12+ as "python", Git,
 # Visual Studio 2022 or 2026 with "Desktop development with C++" and
@@ -9,13 +9,14 @@
 #
 # Run it from a clone on a Windows drive such as C:\src\mozc-ffi, not from
 # \\wsl.localhost: Bazel can't build on a network path. Mozc is fetched into
-# third_party\mozc (not tracked) along with the LLVM and MSYS2 it builds with.
+# build\mozc (not tracked) along with the LLVM and MSYS2 it builds with.
 # The first build downloads about 1 GB and takes a while.
 
 $ErrorActionPreference = 'Stop'
-$root = $PSScriptRoot
-$commit = (Get-Content (Join-Path $root 'MOZC_COMMIT') -Raw).Trim()
-$mozc = Join-Path $root 'third_party\mozc'
+$scripts = $PSScriptRoot
+$root = Split-Path -Parent $scripts
+$commit = (Get-Content (Join-Path $scripts 'MOZC_COMMIT') -Raw).Trim()
+$mozc = Join-Path $root 'build\mozc'
 $bazelisk = if ($env:BAZELISK) { $env:BAZELISK } else { 'bazelisk' }
 
 function Invoke-Checked([string]$exe, [string[]]$arguments) {
@@ -73,7 +74,7 @@ try {
     # Redistributable and can't pick up an older msvcp140.dll that its host process already loaded.
     Invoke-Checked $bazelisk @('build', '--config', 'release_build',
         '--features=static_link_msvcrt', '--features=-dynamic_link_msvcrt',
-        "--downloader_config=$(Join-Path $root 'bazel_downloader.cfg')", '//mozc_ffi:mozc_ffi.dll')
+        "--downloader_config=$(Join-Path $scripts 'bazel_downloader.cfg')", '//mozc_ffi:mozc_ffi.dll')
     New-Item -ItemType Directory -Force (Join-Path $root 'build') | Out-Null
     Copy-Item -Force 'bazel-bin\mozc_ffi\mozc_ffi.dll' (Join-Path $root 'build')
 }

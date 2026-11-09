@@ -10,28 +10,30 @@ back segments with candidates. Picks you `learn` rank first next time.
 | | |
 |---|---|
 | `core/` | The C API (`mozc_ffi.h`) and its implementation over Mozc's converter |
-| `python/` | Python bindings (ctypes, one module) and tests |
-| `csharp/` | C# bindings (netstandard2.0, works in Unity) and tests |
-| `rust/` | Rust bindings (the `mozc-ffi` crate) and tests |
-| `node/` | Node.js bindings (koffi, with TypeScript types) and tests |
+| `bindings/python/` | Python bindings (ctypes, one module) and tests |
+| `bindings/csharp/` | C# bindings (netstandard2.0, works in Unity) and tests |
+| `bindings/rust/` | Rust bindings (the `mozc-ffi` crate) and tests |
+| `bindings/node/` | Node.js bindings (koffi, with TypeScript types) and tests |
+| `scripts/` | The build scripts, the pinned Mozc commit (`MOZC_COMMIT`) and Bazel's download mirrors |
 | `tests/chat.tsv` | Everyday chat sentences with accepted conversions, used by every test suite |
 
 ## Build
 
-Both scripts fetch Mozc at the commit in `MOZC_COMMIT` into `third_party/mozc` and build `core/` inside its source
-tree. The first build downloads Mozc's dependencies and takes a while.
+Both scripts fetch Mozc at the commit in `scripts/MOZC_COMMIT` into `build/mozc` and build `core/` inside its source
+tree. The first build downloads Mozc's dependencies and takes a while. Everything built lands in `build/`, so deleting
+it is a full clean.
 
 Linux needs [Bazelisk](https://github.com/bazelbuild/bazelisk), Git and GCC:
 
 ```sh
-./build.sh          # → build/libmozc_ffi.so
+scripts/build.sh            # → build/libmozc_ffi.so
 ```
 
 Windows needs Bazelisk, Git, Python 3.12+, Visual Studio 2022 or 2026 with the C++ tools and C++ ATL, and Developer
 Mode. Build from a clone on a Windows drive (not `\\wsl.localhost`):
 
 ```powershell
-.\build.ps1         # → build\mozc_ffi.dll
+.\scripts\build.ps1         # → build\mozc_ffi.dll
 ```
 
 The DLL links the C++ runtime statically, so it needs no Visual C++ Redistributable.
@@ -76,10 +78,10 @@ process. `incognito` learns nothing.
 ## Test
 
 ```sh
-python3 -m unittest discover -s python
-dotnet run --project csharp/tests
-(cd rust && cargo test)
-(cd node && npm install && npm test)
+python3 -m unittest discover -s bindings/python
+dotnet run --project bindings/csharp/tests
+(cd bindings/rust && cargo test)
+(cd bindings/node && npm install && npm test)
 ```
 
 ## Licence
