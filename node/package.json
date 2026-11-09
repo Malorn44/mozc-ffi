@@ -1,0 +1,13 @@
+{
+  "name": "mozc-ffi",
+  "version": "0.1.0",
+  "description": "Unofficial Node.js bindings for Google's Mozc kana-kanji converter, in process",
+  "license": "BSD-3-Clause",
+  "main": "index.js",
+  "types": "index.d.ts",
+  "files": ["index.js", "index.d.ts"],
+  "engines": { "node": ">=18" },
+  "keywords": ["japanese", "mozc", "ime", "kana-kanji"],
+  "scripts": { "test": "node --test \"test/*.test.js\"" },
+  "dependencies": { "koffi": "^3.3.4" }
+}

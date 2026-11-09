@@ -8,3 +8,4 @@ bin/
 obj/
 target/
 Cargo.lock
+node_modules/

@@ -13,6 +13,7 @@ back segments with candidates. Picks you `learn` rank first next time.
 | `python/` | Python bindings (ctypes, one module) and tests |
 | `csharp/` | C# bindings (netstandard2.0, works in Unity) and tests |
 | `rust/` | Rust bindings (the `mozc-ffi` crate) and tests |
+| `node/` | Node.js bindings (koffi, with TypeScript types) and tests |
 | `tests/chat.tsv` | Everyday chat sentences with accepted conversions, used by every test suite |
 
 ## Build
@@ -56,6 +57,14 @@ let segments = mozc.convert("ここではきものをぬぐ", &[3, 5, 2], "");
 mozc.learn("かんじ", &[3], &["感じ"], "");
 ```
 
+```js
+const { Mozc } = require('mozc-ffi');
+const mozc = new Mozc('/path/to/profile');
+mozc.convert('ここではきものをぬぐ', [3, 5, 2]);
+mozc.learn('かんじ', [3], ['感じ']);
+mozc.close();
+```
+
 Each binding loads the library when it opens Mozc: from `MOZC_FFI_LIBRARY`, next to the program (or package), or the
 system's library path. It stays loaded until the process exits.
 
@@ -68,6 +77,7 @@ process. `incognito` learns nothing.
 python3 -m unittest discover -s python
 dotnet run --project csharp/tests
 (cd rust && cargo test)
+(cd node && npm install && npm test)
 ```
 
 ## Licence
