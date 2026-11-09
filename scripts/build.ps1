@@ -87,8 +87,10 @@ try {
         if (-not [IO.Path]::IsPathRooted($cache)) { $cache = Join-Path $root $cache }
         $cacheFlags = @("--repository_cache=$cache\repo", "--disk_cache=$cache\disk")
     }
+    # The import library (interface_library) is asked for by name: when the build comes from Bazel's
+    # cache, only the outputs asked for are written out, and it isn't one of the DLL's defaults.
     Invoke-Checked $bazelisk (@('build', '--config', 'release_build',
-        '--features=static_link_msvcrt', '--features=-dynamic_link_msvcrt',
+        '--features=static_link_msvcrt', '--features=-dynamic_link_msvcrt', '--output_groups=+interface_library',
         "--downloader_config=$(Join-Path $scripts 'bazel_downloader.cfg')") + $cacheFlags + @('//mozc_ffi:mozc_ffi.dll'))
     New-Item -ItemType Directory -Force (Join-Path $root 'build') | Out-Null
     Copy-Item -Force 'bazel-bin\mozc_ffi\mozc_ffi.dll' (Join-Path $root 'build')
