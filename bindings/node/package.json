@@ -6,7 +6,7 @@
   "main": "index.js",
   "types": "index.d.ts",
   "files": ["index.js", "index.d.ts"],
-  "engines": { "node": ">=18" },
+  "engines": { "node": ">=22" },
   "keywords": ["japanese", "mozc", "ime", "kana-kanji"],
   "scripts": { "test": "node --test \"test/*.test.js\"" },
   "dependencies": { "koffi": "^3.3.4" }
