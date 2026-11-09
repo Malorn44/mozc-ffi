@@ -16,10 +16,11 @@ bazelisk=${BAZELISK:-bazelisk}
 if [ ! -d "$mozc/.git" ]; then
     git clone --filter=blob:none --no-checkout https://github.com/google/mozc "$mozc"
 fi
-if [ "$(git -C "$mozc" rev-parse HEAD 2>/dev/null)" != "$commit" ]; then
+if ! git -C "$mozc" cat-file -e "$commit^{commit}" 2>/dev/null; then
     git -C "$mozc" fetch --filter=blob:none origin "$commit"
-    git -C "$mozc" checkout --quiet "$commit"
 fi
+# Always: the clone has no files yet even when its HEAD is already the commit.
+git -C "$mozc" checkout --quiet "$commit"
 ln -sfn "$root/core" "$mozc/src/mozc_ffi"
 
 cd "$mozc/src"

@@ -40,11 +40,16 @@ if (-not $devMode -or $devMode.AllowDevelopmentWithoutDevLicense -ne 1) {
 if (-not (Test-Path (Join-Path $mozc '.git'))) {
     Invoke-Checked git @('clone', '--filter=blob:none', '--no-checkout', 'https://github.com/google/mozc', $mozc)
 }
-$head = & git -C $mozc rev-parse HEAD 2>$null
-if ($head -ne $commit) {
+# Windows PowerShell turns redirected stderr into errors under 'Stop', so probe under 'Continue'.
+$ErrorActionPreference = 'Continue'
+& git -C $mozc cat-file -e "$commit^{commit}" 2>$null
+$haveCommit = $LASTEXITCODE -eq 0
+$ErrorActionPreference = 'Stop'
+if (-not $haveCommit) {
     Invoke-Checked git @('-C', $mozc, 'fetch', '--filter=blob:none', 'origin', $commit)
-    Invoke-Checked git @('-C', $mozc, 'checkout', '--quiet', $commit)
 }
+# Always: the clone has no files yet even when its HEAD is already the commit.
+Invoke-Checked git @('-C', $mozc, 'checkout', '--quiet', $commit)
 
 Push-Location (Join-Path $mozc 'src')
 try {
