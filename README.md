@@ -1,5 +1,7 @@
 # mozc-ffi
 
+English | [日本語](https://github.com/Malorn44/mozc-ffi/blob/main/README.ja.md)
+
 Unofficial C API and bindings for [Mozc](https://github.com/google/mozc), Google's open-source Japanese
 kana-kanji converter. Mozc runs inside your process, with its dictionary built in: no `mozc_server`, no IPC, no
 install. Not affiliated with Google.
