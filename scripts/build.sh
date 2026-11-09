@@ -25,7 +25,12 @@ git -C "$mozc" checkout --quiet "$commit"
 ln -sfn "$root/core" "$mozc/src/mozc_ffi"
 
 cd "$mozc/src"
-"$bazelisk" build --config release_build --downloader_config="$scripts/bazel_downloader.cfg" \
+# The C++ runtime (libstdc++, libgcc) is linked in, as build.ps1 does on Windows, so the library
+# needs no particular libstdc++ on the machine that loads it. Bazel's own toolchain adds -lstdc++,
+# which BAZEL_LINKLIBS (default -lstdc++:-lm) replaces with the static archive.
+"$bazelisk" build --config release_build \
+    --repo_env=BAZEL_LINKLIBS=-l%:libstdc++.a:-lm --linkopt=-static-libgcc \
+    --downloader_config="$scripts/bazel_downloader.cfg" \
     //mozc_ffi:libmozc_ffi.so
 mkdir -p "$root/build"
 cp -f bazel-bin/mozc_ffi/libmozc_ffi.so "$root/build/"
