@@ -1,0 +1,43 @@
+# Built inside Mozc's source tree: build.sh links this directory in as
+# //mozc_ffi, next to the Mozc packages it depends on.
+
+load("//:build_defs.bzl", "mozc_cc_binary", "mozc_cc_library")
+
+mozc_cc_library(
+    name = "mozc_ffi_lib",
+    srcs = ["mozc_ffi.cc"],
+    hdrs = ["mozc_ffi.h"],
+    local_defines = ["MOZC_FFI_BUILD"],
+    alwayslink = True,
+    deps = [
+        "//base:system_util",
+        "//base:util",
+        "//base:version",
+        "//config:config_handler",
+        "//converter:converter_interface",
+        "//converter:segments",
+        "//data_manager/oss:oss_data_manager",
+        "//engine",
+        "//protocol:commands_cc_proto",
+        "//protocol:config_cc_proto",
+        "//request:conversion_request",
+        "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/types:span",
+    ],
+)
+
+# Linux: exports only mozc_ffi_* (mozc_ffi.lds).
+mozc_cc_binary(
+    name = "libmozc_ffi.so",
+    additional_linker_inputs = ["mozc_ffi.lds"],
+    linkopts = ["-Wl,--version-script=$(location mozc_ffi.lds)"],
+    linkshared = True,
+    deps = [":mozc_ffi_lib"],
+)
+
+# Windows: exports what mozc_ffi.h marks __declspec(dllexport).
+mozc_cc_binary(
+    name = "mozc_ffi.dll",
+    linkshared = True,
+    deps = [":mozc_ffi_lib"],
+)

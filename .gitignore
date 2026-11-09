@@ -1,0 +1,8 @@
+# Mozc's source, fetched by build.sh at MOZC_COMMIT
+/third_party/
+# Built libraries and local tools
+/build/
+/.tools/
+__pycache__/
+bin/
+obj/
