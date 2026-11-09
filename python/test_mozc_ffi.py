@@ -1,4 +1,4 @@
-"""Tests for mozc_ffi against the built library (build/libmozc_ffi.so unless MOZC_FFI_LIBRARY is set).
+"""Tests for mozc_ffi against the library in build/ (or MOZC_FFI_LIBRARY).
 
     python3 -m unittest discover -s python
 """
@@ -7,12 +7,14 @@ from __future__ import annotations
 
 import os
 import shutil
+import sys
 import tempfile
 import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-os.environ.setdefault("MOZC_FFI_LIBRARY", str(ROOT / "build" / "libmozc_ffi.so"))
+LIBRARY = "mozc_ffi.dll" if sys.platform == "win32" else "libmozc_ffi.so"
+os.environ.setdefault("MOZC_FFI_LIBRARY", str(ROOT / "build" / LIBRARY))
 
 from mozc_ffi import ABI_VERSION, Mozc  # noqa: E402
 

@@ -16,14 +16,21 @@ back segments with candidates. Picks you `learn` rank first next time.
 
 ## Build
 
-Needs [Bazelisk](https://github.com/bazelbuild/bazelisk), Git and GCC (Linux). Windows support is next.
+Both scripts fetch Mozc at the commit in `MOZC_COMMIT` into `third_party/mozc` and build `core/` inside its source
+tree. The first build downloads Mozc's dependencies and takes a while.
+
+Linux needs [Bazelisk](https://github.com/bazelbuild/bazelisk), Git and GCC:
 
 ```sh
 ./build.sh          # → build/libmozc_ffi.so
 ```
 
-`build.sh` fetches Mozc at the commit in `MOZC_COMMIT` into `third_party/mozc` and builds `core/` inside its source
-tree. The first build downloads Mozc's dependencies and takes a while.
+Windows needs Bazelisk, Git, Python 3.12+, Visual Studio 2022 or 2026 with the C++ tools and C++ ATL, and Developer
+Mode. Build from a clone on a Windows drive (not `\\wsl.localhost`):
+
+```powershell
+.\build.ps1         # → build\mozc_ffi.dll
+```
 
 ## Use
 
