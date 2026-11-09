@@ -9,4 +9,4 @@ keywords = ["japanese", "mozc", "ime", "kana-kanji"]
 categories = ["text-processing", "api-bindings"]
 
 [dependencies]
-libloading = "0.8"
+libloading = "0.9"
