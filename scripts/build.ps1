@@ -36,14 +36,14 @@ if ($root.StartsWith('\\')) { Stop-Missing 'a clone on a Windows drive; Bazel ca
 if (-not (Get-Command $bazelisk -ErrorAction SilentlyContinue)) { Stop-Missing 'bazelisk on PATH (or set $env:BAZELISK)' }
 $pythonVersion = & python -c 'import sys; print(sys.version_info >= (3, 12))' 2>$null
 if ($pythonVersion -ne 'True') { Stop-Missing 'Python 3.12 or later as "python"' }
+# A real symlink, made by cmd's mklink: Windows PowerShell's New-Item demands an administrator even
+# where Developer Mode allows symlinks.
 $probe = Join-Path ([IO.Path]::GetTempPath()) "mozc-ffi-symlink-$PID"
-try {
-    New-Item -ItemType SymbolicLink -Path $probe -Target $PSCommandPath -ErrorAction Stop | Out-Null
-    Remove-Item $probe
-}
-catch {
+cmd /c "mklink `"$probe`" `"$PSCommandPath`" >nul 2>&1"
+if ($LASTEXITCODE -ne 0) {
     Stop-Missing 'permission to create symlinks: Developer Mode (Settings > System > For developers) or an administrator shell'
 }
+Remove-Item $probe
 
 # Only the pinned commit is fetched. The folder may already hold Mozc's download cache
 # (build\mozc\src\third_party_cache), so it is initialised in place rather than cloned.
