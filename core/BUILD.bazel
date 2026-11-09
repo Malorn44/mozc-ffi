@@ -7,6 +7,12 @@ mozc_cc_library(
     name = "mozc_ffi_lib",
     srcs = ["mozc_ffi.cc"],
     hdrs = ["mozc_ffi.h"],
+    # Mozc's headers lack nullability annotations, which clang-cl reports in every file that
+    # includes them; this code uses none.
+    copts = select({
+        "@platforms//os:windows": ["-Wno-nullability-completeness"],
+        "//conditions:default": [],
+    }),
     local_defines = ["MOZC_FFI_BUILD"],
     alwayslink = True,
     deps = [

@@ -39,7 +39,8 @@ cd "$mozc/src"
 # The C++ runtime (libstdc++, libgcc) is linked in, as build.ps1 does on Windows, so the library
 # needs no particular libstdc++ on the machine that loads it. Bazel's own toolchain adds -lstdc++,
 # which BAZEL_LINKLIBS (default -lstdc++:-lm) replaces with the static archive.
-"$bazelisk" build --config release_build \
+# --output_filter shows compiler output for //mozc_ffi only, not Mozc's own warnings.
+"$bazelisk" build --config release_build --output_filter='^//mozc_ffi' \
     --repo_env=BAZEL_LINKLIBS=-l%:libstdc++.a:-lm --linkopt=-static-libgcc \
     --downloader_config="$scripts/bazel_downloader.cfg" "${cache_flags[@]}" \
     //mozc_ffi:libmozc_ffi.so

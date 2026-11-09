@@ -89,7 +89,8 @@ try {
     }
     # The import library (interface_library) is asked for by name: when the build comes from Bazel's
     # cache, only the outputs asked for are written out, and it isn't one of the DLL's defaults.
-    Invoke-Checked $bazelisk (@('build', '--config', 'release_build',
+    # --output_filter shows compiler output for //mozc_ffi only, not Mozc's own warnings.
+    Invoke-Checked $bazelisk (@('build', '--config', 'release_build', '--output_filter=^//mozc_ffi',
         '--features=static_link_msvcrt', '--features=-dynamic_link_msvcrt', '--output_groups=+interface_library',
         "--downloader_config=$(Join-Path $scripts 'bazel_downloader.cfg')") + $cacheFlags + @('//mozc_ffi:mozc_ffi.dll'))
     New-Item -ItemType Directory -Force (Join-Path $root 'build') | Out-Null
