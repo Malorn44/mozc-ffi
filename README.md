@@ -14,8 +14,8 @@ back segments with candidates. Picks you `learn` rank first next time.
 | `bindings/csharp/` | C# bindings (netstandard2.0, works in Unity) and tests |
 | `bindings/rust/` | Rust bindings (the `mozc-ffi` crate) and tests |
 | `bindings/node/` | Node.js bindings (koffi, with TypeScript types) and tests |
-| `scripts/` | The build scripts, the pinned Mozc commit (`MOZC_COMMIT`) and Bazel's download mirrors |
-| `tests/chat.tsv` | Everyday chat sentences with accepted conversions, used by every test suite |
+| `scripts/` | The build scripts, `check.sh` (every lint check and test), the pinned Mozc commit (`MOZC_COMMIT`) |
+| `tests/` | `chat.tsv`, everyday chat sentences used by every test suite, and `smoke.c`, a C program using the API |
 
 ## Build
 
@@ -78,11 +78,12 @@ process. `incognito` learns nothing.
 ## Test
 
 ```sh
-python3 -m unittest discover -s bindings/python
-dotnet run --project bindings/csharp/tests
-(cd bindings/rust && cargo test)
-(cd bindings/node && npm install && npm test)
+scripts/check.sh              # every lint check, then every test
+scripts/check.sh lint python  # one lint check: c, python, csharp, rust, node, scripts
+scripts/check.sh test rust    # one binding's tests: c, csharp, python, node, rust
 ```
+
+The tests use the library in `build/`. CI runs the same commands on Linux and Windows for every pull request.
 
 ## Licence
 

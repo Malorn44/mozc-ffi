@@ -48,7 +48,10 @@ impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Error::Load(error) => write!(f, "could not load mozc_ffi: {error}"),
-            Error::Abi { found } => write!(f, "mozc_ffi has ABI {found}, these bindings need {ABI_VERSION}"),
+            Error::Abi { found } => write!(
+                f,
+                "mozc_ffi has ABI {found}, these bindings need {ABI_VERSION}"
+            ),
             Error::Path => write!(f, "the profile path must be UTF-8 without NUL"),
             Error::Open => write!(f, "mozc_ffi_open failed"),
         }
@@ -72,7 +75,14 @@ struct Api {
     candidate_count: unsafe extern "C" fn(Result, i32) -> i32,
     candidate: unsafe extern "C" fn(Result, i32, i32) -> *const c_char,
     result_free: unsafe extern "C" fn(Result),
-    learn: unsafe extern "C" fn(Handle, *const c_char, *const i32, *const *const c_char, i32, *const c_char) -> i32,
+    learn: unsafe extern "C" fn(
+        Handle,
+        *const c_char,
+        *const i32,
+        *const *const c_char,
+        i32,
+        *const c_char,
+    ) -> i32,
     clear_learning: unsafe extern "C" fn(Handle) -> i32,
     flush: unsafe extern "C" fn(Handle) -> i32,
     // Never unloaded: Mozc keeps global state and background threads that don't survive
@@ -142,12 +152,17 @@ impl Mozc {
     ) -> std::result::Result<Mozc, Error> {
         let api = Api::load(library)?;
         let profile = match profile_dir {
-            Some(dir) => Some(dir.to_str().and_then(|s| CString::new(s).ok()).ok_or(Error::Path)?),
+            Some(dir) => Some(
+                dir.to_str()
+                    .and_then(|s| CString::new(s).ok())
+                    .ok_or(Error::Path)?,
+            ),
             None => None,
         };
         let flags = if incognito { INCOGNITO } else { 0 };
         // SAFETY: the profile string outlives the call; NULL means Mozc's default.
-        let handle = unsafe { (api.open)(profile.as_ref().map_or(ptr::null(), |p| p.as_ptr()), flags) };
+        let handle =
+            unsafe { (api.open)(profile.as_ref().map_or(ptr::null(), |p| p.as_ptr()), flags) };
         if handle.is_null() {
             return Err(Error::Open);
         }
@@ -164,13 +179,22 @@ impl Mozc {
     /// characters) fixes the segments, or is empty to let Mozc choose; `context` is the text
     /// just before the reading, or "". Empty if it can't be converted as asked.
     pub fn convert(&self, reading: &str, lengths: &[usize], context: &str) -> Vec<Segment> {
-        let (Ok(reading), Ok(context), Some(lengths)) = (CString::new(reading), CString::new(context), to_i32(lengths))
-        else {
+        let (Ok(reading), Ok(context), Some(lengths)) = (
+            CString::new(reading),
+            CString::new(context),
+            to_i32(lengths),
+        ) else {
             return Vec::new();
         };
         // SAFETY: every pointer outlives the call; lengths has `lengths.len()` entries.
         let result = unsafe {
-            (self.api.convert)(self.handle, reading.as_ptr(), lengths.as_ptr(), lengths.len() as i32, context.as_ptr())
+            (self.api.convert)(
+                self.handle,
+                reading.as_ptr(),
+                lengths.as_ptr(),
+                lengths.len() as i32,
+                context.as_ptr(),
+            )
         };
         self.read(result)
     }
@@ -182,7 +206,10 @@ impl Mozc {
         };
         // SAFETY: both strings outlive the call.
         let result = unsafe { (self.api.predict)(self.handle, reading.as_ptr(), context.as_ptr()) };
-        self.read(result).into_iter().next().map_or_else(Vec::new, |segment| segment.candidates)
+        self.read(result)
+            .into_iter()
+            .next()
+            .map_or_else(Vec::new, |segment| segment.candidates)
     }
 
     /// Learns a sent conversion: `texts[i]` picked for the segment of `lengths[i]`, so the picks
@@ -191,11 +218,18 @@ impl Mozc {
         if lengths.is_empty() || lengths.len() != texts.len() {
             return false;
         }
-        let (Ok(reading), Ok(context), Some(lengths)) = (CString::new(reading), CString::new(context), to_i32(lengths))
-        else {
+        let (Ok(reading), Ok(context), Some(lengths)) = (
+            CString::new(reading),
+            CString::new(context),
+            to_i32(lengths),
+        ) else {
             return false;
         };
-        let Ok(texts) = texts.iter().map(|t| CString::new(*t)).collect::<std::result::Result<Vec<_>, _>>() else {
+        let Ok(texts) = texts
+            .iter()
+            .map(|t| CString::new(*t))
+            .collect::<std::result::Result<Vec<_>, _>>()
+        else {
             return false;
         };
         let pointers: Vec<*const c_char> = texts.iter().map(|t| t.as_ptr()).collect();
@@ -234,7 +268,9 @@ impl Mozc {
             let segments = (0..(api.segment_count)(result))
                 .map(|s| Segment {
                     reading: text((api.segment_reading)(result, s)),
-                    candidates: (0..(api.candidate_count)(result, s)).map(|c| text((api.candidate)(result, s, c))).collect(),
+                    candidates: (0..(api.candidate_count)(result, s))
+                        .map(|c| text((api.candidate)(result, s, c)))
+                        .collect(),
                 })
                 .collect();
             (api.result_free)(result);
@@ -261,7 +297,9 @@ fn default_library() -> PathBuf {
     } else {
         "libmozc_ffi.so"
     };
-    let beside = std::env::current_exe().ok().and_then(|exe| exe.parent().map(|dir| dir.join(name)));
+    let beside = std::env::current_exe()
+        .ok()
+        .and_then(|exe| exe.parent().map(|dir| dir.join(name)));
     match beside {
         Some(path) if path.exists() => path,
         _ => PathBuf::from(name),

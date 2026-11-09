@@ -1,0 +1,31 @@
+# Monthly version updates, one grouped PR per ecosystem. The PR title is the commit on main
+# (squash merge), so it is a conventional commit: chore(deps): ….
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule: { interval: monthly }
+    commit-message: { prefix: chore(deps) }
+    groups:
+      actions: { patterns: ["*"] }
+
+  - package-ecosystem: npm
+    directory: /bindings/node
+    schedule: { interval: monthly }
+    commit-message: { prefix: chore(deps) }
+    groups:
+      npm: { patterns: ["*"] }
+
+  - package-ecosystem: cargo
+    directory: /bindings/rust
+    schedule: { interval: monthly }
+    commit-message: { prefix: chore(deps) }
+    groups:
+      cargo: { patterns: ["*"] }
+
+  - package-ecosystem: pip
+    directory: /scripts
+    schedule: { interval: monthly }
+    commit-message: { prefix: chore(deps) }
+    groups:
+      tools: { patterns: ["*"] }

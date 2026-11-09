@@ -5,9 +5,29 @@
   "license": "BSD-3-Clause",
   "main": "index.js",
   "types": "index.d.ts",
-  "files": ["index.js", "index.d.ts"],
-  "engines": { "node": ">=22" },
-  "keywords": ["japanese", "mozc", "ime", "kana-kanji"],
-  "scripts": { "test": "node --test \"test/*.test.js\"" },
-  "dependencies": { "koffi": "^3.3.4" }
+  "files": [
+    "index.js",
+    "index.d.ts"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "keywords": [
+    "japanese",
+    "mozc",
+    "ime",
+    "kana-kanji"
+  ],
+  "scripts": {
+    "test": "node --test \"test/*.test.js\""
+  },
+  "dependencies": {
+    "koffi": "^3.3.4"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.14.0",
+    "globals": "^17.14.0",
+    "typescript": "^7.0.2"
+  }
 }

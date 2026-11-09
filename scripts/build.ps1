@@ -4,13 +4,16 @@
 #
 # Needs: bazelisk on PATH (or $env:BAZELISK), Python 3.12+ as "python", Git,
 # Visual Studio 2022 or 2026 with "Desktop development with C++" and
-# "C++ ATL for latest build tools (x86 & x64)", and Windows Developer Mode
-# (Mozc's Bazel config creates symlinks).
+# "C++ ATL for latest build tools (x86 & x64)", and permission to create
+# symlinks, which Mozc's Bazel config needs: Windows Developer Mode, or an
+# administrator shell.
 #
 # Run it from a clone on a Windows drive such as C:\src\mozc-ffi, not from
 # \\wsl.localhost: Bazel can't build on a network path. Mozc is fetched into
 # build\mozc (not tracked) along with the LLVM and MSYS2 it builds with.
 # The first build downloads about 1 GB and takes a while.
+# $env:MOZC_FFI_BAZEL_CACHE = <dir> keeps Bazel's downloads and build outputs
+# there (CI saves it between runs).
 
 $ErrorActionPreference = 'Stop'
 $scripts = $PSScriptRoot
@@ -33,13 +36,20 @@ if ($root.StartsWith('\\')) { Stop-Missing 'a clone on a Windows drive; Bazel ca
 if (-not (Get-Command $bazelisk -ErrorAction SilentlyContinue)) { Stop-Missing 'bazelisk on PATH (or set $env:BAZELISK)' }
 $pythonVersion = & python -c 'import sys; print(sys.version_info >= (3, 12))' 2>$null
 if ($pythonVersion -ne 'True') { Stop-Missing 'Python 3.12 or later as "python"' }
-$devMode = Get-ItemProperty 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\AppModelUnlock' -ErrorAction SilentlyContinue
-if (-not $devMode -or $devMode.AllowDevelopmentWithoutDevLicense -ne 1) {
-    Stop-Missing 'Developer Mode (Settings > System > For developers)'
+# A real symlink, made by cmd's mklink: Windows PowerShell's New-Item demands an administrator even
+# where Developer Mode allows symlinks.
+$probe = Join-Path ([IO.Path]::GetTempPath()) "mozc-ffi-symlink-$PID"
+cmd /c "mklink `"$probe`" `"$PSCommandPath`" >nul 2>&1"
+if ($LASTEXITCODE -ne 0) {
+    Stop-Missing 'permission to create symlinks: Developer Mode (Settings > System > For developers) or an administrator shell'
 }
+Remove-Item $probe
 
+# Only the pinned commit is fetched. The folder may already hold Mozc's download cache
+# (build\mozc\src\third_party_cache), so it is initialised in place rather than cloned.
 if (-not (Test-Path (Join-Path $mozc '.git'))) {
-    Invoke-Checked git @('clone', '--filter=blob:none', '--no-checkout', 'https://github.com/google/mozc', $mozc)
+    Invoke-Checked git @('init', '--quiet', $mozc)
+    Invoke-Checked git @('-C', $mozc, 'remote', 'add', 'origin', 'https://github.com/google/mozc')
 }
 # Windows PowerShell turns redirected stderr into errors under 'Stop', so probe under 'Continue'.
 $ErrorActionPreference = 'Continue'
@@ -47,9 +57,8 @@ $ErrorActionPreference = 'Continue'
 $haveCommit = $LASTEXITCODE -eq 0
 $ErrorActionPreference = 'Stop'
 if (-not $haveCommit) {
-    Invoke-Checked git @('-C', $mozc, 'fetch', '--filter=blob:none', 'origin', $commit)
+    Invoke-Checked git @('-C', $mozc, 'fetch', '--quiet', '--depth', '1', 'origin', $commit)
 }
-# Always: the clone has no files yet even when its HEAD is already the commit.
 Invoke-Checked git @('-C', $mozc, 'checkout', '--quiet', $commit)
 
 Push-Location (Join-Path $mozc 'src')
@@ -72,11 +81,22 @@ try {
 
     # The C++ runtime is linked in (as Mozc's own Windows binaries do), so the DLL needs no Visual C++
     # Redistributable and can't pick up an older msvcp140.dll that its host process already loaded.
-    Invoke-Checked $bazelisk @('build', '--config', 'release_build',
-        '--features=static_link_msvcrt', '--features=-dynamic_link_msvcrt',
-        "--downloader_config=$(Join-Path $scripts 'bazel_downloader.cfg')", '//mozc_ffi:mozc_ffi.dll')
+    $cacheFlags = @()
+    if ($env:MOZC_FFI_BAZEL_CACHE) {
+        $cache = $env:MOZC_FFI_BAZEL_CACHE
+        if (-not [IO.Path]::IsPathRooted($cache)) { $cache = Join-Path $root $cache }
+        $cacheFlags = @("--repository_cache=$cache\repo", "--disk_cache=$cache\disk")
+    }
+    # The import library (interface_library) is asked for by name: when the build comes from Bazel's
+    # cache, only the outputs asked for are written out, and it isn't one of the DLL's defaults.
+    # --output_filter shows compiler output for //mozc_ffi only, not Mozc's own warnings.
+    Invoke-Checked $bazelisk (@('build', '--config', 'release_build', '--output_filter=^//mozc_ffi',
+        '--features=static_link_msvcrt', '--features=-dynamic_link_msvcrt', '--output_groups=+interface_library',
+        "--downloader_config=$(Join-Path $scripts 'bazel_downloader.cfg')") + $cacheFlags + @('//mozc_ffi:mozc_ffi.dll'))
     New-Item -ItemType Directory -Force (Join-Path $root 'build') | Out-Null
     Copy-Item -Force 'bazel-bin\mozc_ffi\mozc_ffi.dll' (Join-Path $root 'build')
+    # The import library, for C and C++ programs that link against the DLL.
+    Copy-Item -Force 'bazel-bin\mozc_ffi\mozc_ffi.dll.if.lib' (Join-Path $root 'build\mozc_ffi.lib')
 }
 finally {
     Pop-Location

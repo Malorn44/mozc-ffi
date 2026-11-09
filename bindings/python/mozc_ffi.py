@@ -79,8 +79,9 @@ def _lengths(lengths: Sequence[int]):
 class Mozc:
     """One Mozc engine. Open one profile per process: Mozc keeps the profile directory globally."""
 
-    def __init__(self, profile_dir: Optional[str | os.PathLike] = None, *, incognito: bool = False,
-                 library: Optional[str] = None) -> None:
+    def __init__(
+        self, profile_dir: Optional[str | os.PathLike] = None, *, incognito: bool = False, library: Optional[str] = None
+    ) -> None:
         self._lib = _load(library or _library_path())
         profile = None if profile_dir is None else os.fspath(profile_dir)
         self._handle = self._lib.mozc_ffi_open(_utf8(profile), _INCOGNITO if incognito else 0)
@@ -94,8 +95,9 @@ class Mozc:
     def convert(self, reading: str, lengths: Optional[Sequence[int]] = None, context: str = "") -> list[Segment]:
         """Segments of `reading` with candidates, best first; [] if it can't be converted as asked."""
         lengths = list(lengths or [])
-        result = self._lib.mozc_ffi_convert(self._open(), _utf8(reading), _lengths(lengths), len(lengths),
-                                            _utf8(context))
+        result = self._lib.mozc_ffi_convert(
+            self._open(), _utf8(reading), _lengths(lengths), len(lengths), _utf8(context)
+        )
         return self._read(result)
 
     def predict(self, reading: str, context: str = "") -> list[str]:
@@ -108,8 +110,12 @@ class Mozc:
         if len(lengths) != len(texts):
             return False
         encoded = (ctypes.c_char_p * len(texts))(*(_utf8(t) for t in texts))
-        return self._lib.mozc_ffi_learn(self._open(), _utf8(reading), _lengths(lengths), encoded, len(texts),
-                                        _utf8(context)) == 1
+        return (
+            self._lib.mozc_ffi_learn(
+                self._open(), _utf8(reading), _lengths(lengths), encoded, len(texts), _utf8(context)
+            )
+            == 1
+        )
 
     def clear_learning(self) -> bool:
         return self._lib.mozc_ffi_clear_learning(self._open()) == 1
@@ -145,8 +151,10 @@ class Mozc:
             return [
                 Segment(
                     lib.mozc_ffi_segment_reading(result, s).decode("utf-8"),
-                    [lib.mozc_ffi_candidate(result, s, c).decode("utf-8")
-                     for c in range(lib.mozc_ffi_candidate_count(result, s))],
+                    [
+                        lib.mozc_ffi_candidate(result, s, c).decode("utf-8")
+                        for c in range(lib.mozc_ffi_candidate_count(result, s))
+                    ],
                 )
                 for s in range(lib.mozc_ffi_segment_count(result))
             ]
