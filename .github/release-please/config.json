@@ -1,0 +1,22 @@
+{
+  "$schema": "https://raw.githubusercontent.com/googleapis/release-please/v17.6.0/schemas/config.json",
+  "packages": {
+    ".": {
+      "release-type": "simple",
+      "include-v-in-tag": true,
+      "include-component-in-tag": false,
+      "initial-version": "0.1.0",
+      "bump-minor-pre-major": true,
+      "draft": true,
+      "force-tag-creation": true,
+      "extra-files": [
+        { "type": "toml", "path": "bindings/python/pyproject.toml", "jsonpath": "$.project.version" },
+        { "type": "toml", "path": "bindings/rust/Cargo.toml", "jsonpath": "$.package.version" },
+        { "type": "json", "path": "bindings/node/package.json", "jsonpath": "$.version" },
+        { "type": "json", "path": "bindings/node/package-lock.json", "jsonpath": "$.version" },
+        { "type": "json", "path": "bindings/node/package-lock.json", "jsonpath": "$.packages[''].version" },
+        { "type": "xml", "path": "bindings/csharp/MozcFfi.csproj", "xpath": "//Project/PropertyGroup/Version" }
+      ]
+    }
+  }
+}
