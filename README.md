@@ -12,7 +12,8 @@ back segments with candidates. Picks you `learn` rank first next time.
 | `core/` | The C API (`mozc_ffi.h`) and its implementation over Mozc's converter |
 | `python/` | Python bindings (ctypes, one module) and tests |
 | `csharp/` | C# bindings (netstandard2.0, works in Unity) and tests |
-| `tests/chat.tsv` | Everyday chat sentences with accepted conversions, used by both test suites |
+| `rust/` | Rust bindings (the `mozc-ffi` crate) and tests |
+| `tests/chat.tsv` | Everyday chat sentences with accepted conversions, used by every test suite |
 
 ## Build
 
@@ -49,6 +50,15 @@ var segments = mozc.Convert("きょうはさむいですね");   // segments[0].
 mozc.Learn("かんじ", new[] { 3 }, new[] { "感じ" });
 ```
 
+```rust
+let mozc = mozc_ffi::Mozc::open(Some(Path::new("/path/to/profile")), false)?;
+let segments = mozc.convert("ここではきものをぬぐ", &[3, 5, 2], "");
+mozc.learn("かんじ", &[3], &["感じ"], "");
+```
+
+Each binding loads the library when it opens Mozc: from `MOZC_FFI_LIBRARY`, next to the program (or package), or the
+system's library path. It stays loaded until the process exits.
+
 Segment lengths count Unicode characters. Mozc keeps the profile directory per process, so open one profile per
 process. `incognito` learns nothing.
 
@@ -57,6 +67,7 @@ process. `incognito` learns nothing.
 ```sh
 python3 -m unittest discover -s python
 dotnet run --project csharp/tests
+(cd rust && cargo test)
 ```
 
 ## Licence

@@ -1,0 +1,12 @@
+[package]
+name = "mozc-ffi"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.65"
+license = "BSD-3-Clause"
+description = "Unofficial Rust bindings for Google's Mozc kana-kanji converter, in process"
+keywords = ["japanese", "mozc", "ime", "kana-kanji"]
+categories = ["text-processing", "api-bindings"]
+
+[dependencies]
+libloading = "0.8"
