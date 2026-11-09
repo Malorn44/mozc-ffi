@@ -6,13 +6,21 @@ use std::sync::{Mutex, MutexGuard, OnceLock};
 use mozc_ffi::{Mozc, Segment, ABI_VERSION};
 
 fn root() -> PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR")).ancestors().nth(2).unwrap().to_path_buf()
+    Path::new(env!("CARGO_MANIFEST_DIR"))
+        .ancestors()
+        .nth(2)
+        .unwrap()
+        .to_path_buf()
 }
 
 fn library() -> PathBuf {
     match std::env::var_os("MOZC_FFI_LIBRARY") {
         Some(path) => PathBuf::from(path),
-        None => root().join("build").join(if cfg!(windows) { "mozc_ffi.dll" } else { "libmozc_ffi.so" }),
+        None => root().join("build").join(if cfg!(windows) {
+            "mozc_ffi.dll"
+        } else {
+            "libmozc_ffi.so"
+        }),
     }
 }
 
@@ -21,7 +29,8 @@ fn profile() -> (MutexGuard<'static, ()>, &'static Path) {
     static LOCK: Mutex<()> = Mutex::new(());
     static DIR: OnceLock<PathBuf> = OnceLock::new();
     let guard = LOCK.lock().unwrap_or_else(|e| e.into_inner());
-    let dir = DIR.get_or_init(|| std::env::temp_dir().join(format!("mozc-ffi-rs-{}", std::process::id())));
+    let dir = DIR
+        .get_or_init(|| std::env::temp_dir().join(format!("mozc-ffi-rs-{}", std::process::id())));
     (guard, dir)
 }
 
@@ -39,7 +48,13 @@ fn reachable(target: &str, segments: &[Segment]) -> bool {
     for segment in segments {
         ends = ends
             .iter()
-            .flat_map(|&e| segment.candidates.iter().filter(move |c| target[e..].starts_with(c.as_str())).map(move |c| e + c.len()))
+            .flat_map(|&e| {
+                segment
+                    .candidates
+                    .iter()
+                    .filter(move |c| target[e..].starts_with(c.as_str()))
+                    .map(move |c| e + c.len())
+            })
             .collect();
     }
     ends.contains(&target.len())
@@ -53,7 +68,13 @@ fn converts_and_predicts() {
     assert_eq!(mozc.mozc_version().split('.').count(), 4);
 
     let segments = mozc.convert("きょうはさむいですね", &[], "");
-    assert_eq!(segments.iter().map(|s| s.reading.as_str()).collect::<String>(), "きょうはさむいですね");
+    assert_eq!(
+        segments
+            .iter()
+            .map(|s| s.reading.as_str())
+            .collect::<String>(),
+        "きょうはさむいですね"
+    );
     assert_eq!(first(&segments), "今日は寒いですね");
 
     let segments = mozc.convert("ここではきものをぬぐ", &[3, 5, 2], "");
@@ -71,8 +92,14 @@ fn converts_and_predicts() {
     unique.dedup();
     assert_eq!(unique.len(), candidates.len());
 
-    assert!(mozc.predict("ありがと", "").iter().any(|p| p.starts_with("ありがとう")));
-    assert_eq!(first(&mozc.convert("さむいですね", &[], "今日は")), "寒いですね");
+    assert!(mozc
+        .predict("ありがと", "")
+        .iter()
+        .any(|p| p.starts_with("ありがとう")));
+    assert_eq!(
+        first(&mozc.convert("さむいですね", &[], "今日は")),
+        "寒いですね"
+    );
 }
 
 #[test]
@@ -94,7 +121,11 @@ fn chat_quality() {
         top1 += answers.contains(&first(&segments).as_str()) as usize;
         picks += answers.iter().any(|a| reachable(a, &segments)) as usize;
     }
-    println!("chat.tsv: top-1 {top1}/{}, reachable by picks {picks}/{}", cases.len(), cases.len());
+    println!(
+        "chat.tsv: top-1 {top1}/{}, reachable by picks {picks}/{}",
+        cases.len(),
+        cases.len()
+    );
     assert!(top1 * 100 >= cases.len() * 80);
     assert!(picks * 100 >= cases.len() * 95);
 }

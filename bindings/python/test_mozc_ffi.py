@@ -1,6 +1,6 @@
 """Tests for mozc_ffi against the library in build/ (or MOZC_FFI_LIBRARY).
 
-    python3 -m unittest discover -s bindings/python
+python3 -m unittest discover -s bindings/python
 """
 
 from __future__ import annotations

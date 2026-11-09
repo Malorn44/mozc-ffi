@@ -1,0 +1,206 @@
+# Lints, builds and tests on every pull request and every push to main. Each platform's tests wait
+# only for that platform's build. "ci ok" is the one check the main ruleset requires: it passes only
+# when every other job passed (pr-title is skipped off pull requests).
+#
+# The lint and test steps run scripts/check.sh, the same commands as a local run.
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  BAZELISK_VERSION: v1.30.0
+  # Bazel's downloads and build outputs, saved between runs (scripts/build.sh, build.ps1).
+  MOZC_FFI_BAZEL_CACHE: build/bazel-cache
+
+jobs:
+  lint:
+    name: lint (${{ matrix.check }})
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        check: [c, python, csharp, rust, node, scripts]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - if: matrix.check == 'node'
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: lts/*
+      - if: matrix.check == 'rust'
+        run: rustup component add rustfmt clippy
+      - run: scripts/check.sh lint "$CHECK"
+        env:
+          CHECK: ${{ matrix.check }}
+
+  pr-title:
+    name: pr-title
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    steps:
+      - env:
+          TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          # Squash-merged: the title becomes the commit on main, so it is a conventional commit.
+          pattern='^(feat|fix|perf|refactor|docs|test|build|ci|chore|style|revert)(\([a-z0-9-]+\))?!?: .+'
+          if [[ ! $TITLE =~ $pattern ]]; then
+            echo "::error::The PR title is not a conventional commit, type(scope): summary"
+            exit 1
+          fi
+          echo "PR title ok"
+
+  build-linux:
+    runs-on: ubuntu-24.04
+    # glibc 2.28, so the library loads on any Linux with glibc 2.28 or later (manylinux_2_28 wheels).
+    container: quay.io/pypa/manylinux_2_28_x86_64:2026.10.25-1@sha256:e2808351a165aa85913d79f1f8457b4f6d74047b47fba07b5b9a5e6c0055a017
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: build/bazel-cache
+          key: bazel-linux-${{ hashFiles('scripts/MOZC_COMMIT', 'scripts/build.sh', 'core/**') }}
+          restore-keys: bazel-linux-
+      - name: Install bazelisk
+        run: |
+          curl -fsSL --retry 5 --retry-all-errors -o /usr/local/bin/bazelisk \
+            "https://github.com/bazelbuild/bazelisk/releases/download/$BAZELISK_VERSION/bazelisk-linux-amd64"
+          echo "a248ae2b2b62b5baebb748f6fba7203bff1a27e5d01b55399a8406744cb539e8  /usr/local/bin/bazelisk" | sha256sum -c -
+          chmod +x /usr/local/bin/bazelisk
+          echo /opt/python/cp312-cp312/bin >> "$GITHUB_PATH"
+      - run: scripts/build.sh
+      - run: scripts/check.sh library --max-glibc 2.28
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: lib-linux-x64
+          path: build/libmozc_ffi.so
+          if-no-files-found: error
+
+  build-windows:
+    runs-on: windows-2025
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.13" # Mozc's Windows build needs 3.12 or later
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          # Bazel's caches, and the download cache of Mozc's LLVM and MSYS2 (about 1 GB).
+          path: |
+            build/bazel-cache
+            build/mozc/src/third_party_cache
+          key: bazel-windows-${{ hashFiles('scripts/MOZC_COMMIT', 'scripts/build.ps1', 'core/**') }}
+          restore-keys: bazel-windows-
+      - name: Install bazelisk
+        shell: pwsh
+        run: |
+          $exe = Join-Path $env:RUNNER_TEMP 'bazelisk.exe'
+          Invoke-WebRequest -OutFile $exe -MaximumRetryCount 5 -RetryIntervalSec 10 `
+            -Uri "https://github.com/bazelbuild/bazelisk/releases/download/$env:BAZELISK_VERSION/bazelisk-windows-amd64.exe"
+          if ((Get-FileHash $exe -Algorithm SHA256).Hash -ne '5d14a31e9d8a363c48ba1900dbd56764d730835232eb0d113cce255856ffe3ef') {
+            throw 'bazelisk-windows-amd64.exe does not match its published SHA-256'
+          }
+          "BAZELISK=$exe" >> $env:GITHUB_ENV
+      - shell: pwsh
+        run: scripts/build.ps1
+      - shell: bash
+        run: scripts/check.sh library
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: lib-windows-x64
+          path: |
+            build/mozc_ffi.dll
+            build/mozc_ffi.lib
+          if-no-files-found: error
+
+  test-linux:
+    name: test-linux (${{ matrix.binding }}${{ matrix.version && format(' {0}', matrix.version) || '' }})
+    needs: build-linux
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        # The oldest supported version of each language, and the newest.
+        include:
+          - binding: c
+          - binding: csharp
+          - { binding: python, version: "3.11" }
+          - { binding: python, version: "3.x" }
+          - { binding: node, version: "22" }
+          - { binding: node, version: "lts/*" }
+          - { binding: rust, version: "1.71" }
+          - { binding: rust, version: stable }
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: lib-linux-x64
+          path: build
+      - if: matrix.binding == 'python'
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: ${{ matrix.version }}
+      - if: matrix.binding == 'node'
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ matrix.version }}
+      - if: matrix.binding == 'rust'
+        run: |
+          rustup toolchain install "$VERSION" --profile minimal
+          echo "RUSTUP_TOOLCHAIN=$VERSION" >> "$GITHUB_ENV"
+        env:
+          VERSION: ${{ matrix.version }}
+      - run: scripts/check.sh test "$BINDING"
+        env:
+          BINDING: ${{ matrix.binding }}
+
+  test-windows:
+    name: test-windows (${{ matrix.binding }})
+    needs: build-windows
+    runs-on: windows-2025
+    defaults:
+      run:
+        shell: bash
+    strategy:
+      fail-fast: false
+      matrix:
+        binding: [c, csharp, python, node, rust] # the newest version of each
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: lib-windows-x64
+          path: build
+      - if: matrix.binding == 'python'
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.x"
+      - if: matrix.binding == 'node'
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: lts/*
+      - run: scripts/check.sh test "$BINDING"
+        env:
+          BINDING: ${{ matrix.binding }}
+
+  ci-ok:
+    name: ci ok # the name the main ruleset requires
+    needs: [lint, pr-title, build-linux, build-windows, test-linux, test-windows]
+    if: always()
+    runs-on: ubuntu-24.04
+    steps:
+      - env:
+          NEEDS: ${{ toJSON(needs) }}
+        run: |
+          # Skipped is fine (pr-title, off pull requests); failed or cancelled is not.
+          jq -r 'to_entries[] | "\(.key): \(.value.result)"' <<< "$NEEDS"
+          jq -e 'all(.[]; .result == "success" or .result == "skipped")' <<< "$NEEDS" > /dev/null
