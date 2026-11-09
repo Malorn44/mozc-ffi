@@ -1,0 +1,36 @@
+# The Linux build, shared by CI and the release: run it in the manylinux_2_28 container, after
+# checking out the commit to build. It builds build/libmozc_ffi.so, checks what the library exports
+# and needs, and uploads it as an artifact.
+name: build-linux
+description: Build, check and upload libmozc_ffi.so
+inputs:
+  artifact:
+    description: Name of the artifact to upload
+    required: true
+runs:
+  using: composite
+  steps:
+    - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: build/bazel-cache
+        key: bazel-linux-${{ hashFiles('scripts/MOZC_COMMIT', 'scripts/build.sh', 'core/**') }}
+        restore-keys: bazel-linux-
+    - name: Install bazelisk
+      shell: bash
+      run: |
+        curl -fsSL --retry 5 --retry-delay 10 -o /usr/local/bin/bazelisk \
+          https://github.com/bazelbuild/bazelisk/releases/download/v1.30.0/bazelisk-linux-amd64
+        echo "a248ae2b2b62b5baebb748f6fba7203bff1a27e5d01b55399a8406744cb539e8  /usr/local/bin/bazelisk" | sha256sum -c -
+        chmod +x /usr/local/bin/bazelisk
+        echo /opt/python/cp312-cp312/bin >> "$GITHUB_PATH"
+    - shell: bash
+      run: scripts/build.sh
+      env:
+        MOZC_FFI_BAZEL_CACHE: build/bazel-cache
+    - shell: bash
+      run: scripts/check.sh library --max-glibc 2.28
+    - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+      with:
+        name: ${{ inputs.artifact }}
+        path: build/libmozc_ffi.so
+        if-no-files-found: error

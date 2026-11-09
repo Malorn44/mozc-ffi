@@ -85,6 +85,10 @@ scripts/check.sh test rust    # one binding's tests: c, csharp, python, node, ru
 
 The tests use the library in `build/`. CI runs the same commands on Linux and Windows for every pull request.
 
+## Releases
+
+Releases are made by release-please from conventional-commit PR titles; [.github/RELEASING.md](.github/RELEASING.md) has the steps.
+
 ## Licence
 
 BSD-3-Clause. The built library contains Mozc and its dictionary, whose licences are in

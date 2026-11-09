@@ -1,0 +1,46 @@
+# The Windows build, shared by CI and the release: run it on windows-2025, after checking out the
+# commit to build. It builds build\mozc_ffi.dll and its import library, checks what the DLL exports
+# and imports, and uploads both as an artifact.
+name: build-windows
+description: Build, check and upload mozc_ffi.dll and mozc_ffi.lib
+inputs:
+  artifact:
+    description: Name of the artifact to upload
+    required: true
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+      with:
+        python-version: "3.13" # Mozc's Windows build needs 3.12 or later
+    - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        # Bazel's caches, and the download cache of Mozc's LLVM and MSYS2 (about 1 GB).
+        path: |
+          build/bazel-cache
+          build/mozc/src/third_party_cache
+        key: bazel-windows-${{ hashFiles('scripts/MOZC_COMMIT', 'scripts/build.ps1', 'core/**') }}
+        restore-keys: bazel-windows-
+    - name: Install bazelisk
+      shell: pwsh
+      run: |
+        $exe = Join-Path $env:RUNNER_TEMP 'bazelisk.exe'
+        Invoke-WebRequest -OutFile $exe -MaximumRetryCount 5 -RetryIntervalSec 10 `
+          -Uri 'https://github.com/bazelbuild/bazelisk/releases/download/v1.30.0/bazelisk-windows-amd64.exe'
+        if ((Get-FileHash $exe -Algorithm SHA256).Hash -ne '5d14a31e9d8a363c48ba1900dbd56764d730835232eb0d113cce255856ffe3ef') {
+          throw 'bazelisk-windows-amd64.exe does not match its published SHA-256'
+        }
+        "BAZELISK=$exe" >> $env:GITHUB_ENV
+    - shell: pwsh
+      run: scripts/build.ps1
+      env:
+        MOZC_FFI_BAZEL_CACHE: build/bazel-cache
+    - shell: bash
+      run: scripts/check.sh library
+    - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+      with:
+        name: ${{ inputs.artifact }}
+        path: |
+          build/mozc_ffi.dll
+          build/mozc_ffi.lib
+        if-no-files-found: error
