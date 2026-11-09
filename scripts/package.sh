@@ -124,6 +124,7 @@ for platform in "linux x64 $linux/libmozc_ffi.so" "win32 x64 $windows/mozc_ffi.d
     dir=$stage/npm/$os-$cpu
     mkdir -p "$dir"
     cp "$library" "${notices[@]}" "$dir/"
+    # shellcheck disable=SC2016 # ${os} and the like are JavaScript template strings, for node
     node -e '
 const fs = require("fs"); const [dir, version, os, cpu, library] = process.argv.slice(1);
 fs.writeFileSync(dir + "/package.json", JSON.stringify({
