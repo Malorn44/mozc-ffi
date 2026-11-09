@@ -5,6 +5,7 @@
 #   scripts/check.sh lint [NAME...]     c, python, csharp, rust, node, scripts
 #   scripts/check.sh test [NAME...]     c, csharp, python, node, rust, against build/'s library
 #   scripts/check.sh library [--max-glibc X.Y]   what build/'s library exports and needs
+#   scripts/check.sh tools              set up build/venv only (scripts/package.sh uses it)
 #
 # The Python tools (scripts/requirements.txt) go into a venv at build/venv. The
 # other checks need dotnet, cargo, node and a C compiler on PATH.
@@ -115,6 +116,7 @@ case "$command" in
     lint) [ $# -gt 0 ] || set -- "${lints[@]}"; run lint "$@" ;;
     test) [ $# -gt 0 ] || set -- "${tests[@]}"; run test "$@" ;;
     library) check_library "$@" ;;
+    tools) tools ;;
     all) run lint "${lints[@]}"; run test "${tests[@]}" ;;
-    *) sed -n '2,10p' "$0" >&2; exit 2 ;;
+    *) sed -n '2,11p' "$0" >&2; exit 2 ;;
 esac
