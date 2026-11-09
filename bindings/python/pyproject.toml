@@ -1,16 +1,24 @@
 [build-system]
-requires = ["setuptools>=61"]
+requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "mozc-ffi"
 version = "0.1.0"
 description = "Unofficial Python bindings for Google's Mozc kana-kanji converter, in process"
-license = { text = "BSD-3-Clause" }
+license = "BSD-3-Clause"
+keywords = ["japanese", "mozc", "ime", "kana-kanji"]
 requires-python = ">=3.11"
 
+[project.urls]
+Repository = "https://github.com/Malorn44/mozc-ffi"
+
 [tool.setuptools]
-py-modules = ["mozc_ffi"]
+packages = ["mozc_ffi"]
+
+[tool.setuptools.package-data]
+# The native library and the notices, placed in the package by scripts/package.sh for each wheel.
+mozc_ffi = ["*.so", "*.dll", "*.dylib", "*.md"]
 
 [tool.ruff]
 target-version = "py311"
