@@ -76,7 +76,13 @@ static class Program
         }
         finally
         {
-            try { Directory.Delete(profile, true); } catch (IOException) { }
+            // Mozc writes some profile files read-only, which Windows won't delete as they are.
+            if (Directory.Exists(profile))
+            {
+                foreach (string file in Directory.GetFiles(profile, "*", SearchOption.AllDirectories))
+                    File.SetAttributes(file, FileAttributes.Normal);
+                Directory.Delete(profile, true);
+            }
         }
         Console.WriteLine(failures == 0 ? "All checks passed." : $"{failures} check(s) failed.");
         return failures == 0 ? 0 : 1;
