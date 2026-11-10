@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.2.0](https://github.com/Malorn44/mozc-ffi/compare/v0.1.1...v0.2.0) (2026-11-10)
+
+
+### Features
+
+* **build:** build and package for Linux arm64 ([#21](https://github.com/Malorn44/mozc-ffi/issues/21)) ([2364702](https://github.com/Malorn44/mozc-ffi/commit/2364702ce627a4bddd204e4a661583134acc1398))
+* **core:** give each candidate Mozc's description ([#17](https://github.com/Malorn44/mozc-ffi/issues/17)) ([1eaf941](https://github.com/Malorn44/mozc-ffi/commit/1eaf941c638430518b48c23ee739886e32c91ea2))
+* **core:** say why a call failed ([#16](https://github.com/Malorn44/mozc-ffi/issues/16)) ([90f2a02](https://github.com/Malorn44/mozc-ffi/commit/90f2a0205d87d791b721439b423313c1ee69d640))
+* **rust:** add a download feature that fetches the library ([#19](https://github.com/Malorn44/mozc-ffi/issues/19)) ([e0cbbac](https://github.com/Malorn44/mozc-ffi/commit/e0cbbacbc61cf7127f67b1472498c3e21a37b661))
+* **unity:** add a Unity package, published to npm ([#20](https://github.com/Malorn44/mozc-ffi/issues/20)) ([ee60976](https://github.com/Malorn44/mozc-ffi/commit/ee60976f45a9b21f846740057fce4f03903d7cb5))
+
 ## [0.1.1](https://github.com/Malorn44/mozc-ffi/compare/v0.1.0...v0.1.1) (2026-11-10)
 
 
