@@ -16,7 +16,9 @@ permissions:
   contents: read
 
 concurrency:
-  group: ci-${{ github.event.pull_request.number || github.ref }}
+  # One queue per pull request, and one per commit on main: a later merge never cancels a release
+  # that is waiting for approval or for a re-run.
+  group: ci-${{ github.event.pull_request.number || (github.ref == 'refs/heads/main' && github.sha) || github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
@@ -188,10 +190,10 @@ jobs:
     permissions:
       contents: read # see whether main has moved on, and check out its history
     outputs:
-      created: ${{ steps.release-please.outputs.release_created }}
-      tag: ${{ steps.release-please.outputs.tag_name }}
-      version: ${{ steps.release-please.outputs.version }}
-      sha: ${{ steps.on-main.outputs.sha }}
+      created: ${{ steps.release-please.outputs.release_created == 'true' && 'true' || steps.unfinished.outputs.created }}
+      tag: ${{ steps.release-please.outputs.tag_name || steps.unfinished.outputs.tag }}
+      version: ${{ steps.release-please.outputs.version || steps.unfinished.outputs.version }}
+      sha: ${{ steps.on-main.outputs.sha || steps.unfinished.outputs.sha }}
     steps:
       # A secret can't be read in `if:`, so a step says whether it is set. Until it is, this job (and
       # every release job after it) skips rather than turn main red.
@@ -206,7 +208,7 @@ jobs:
             echo "::notice::No RELEASE_PLEASE_TOKEN secret in the release-please environment, so release-please did not run (.github/RELEASING.md)."
           fi
       # release-please reads main as it is now, not this run's commit. Once main has moved on, it runs
-      # in the newer commit's run instead (queued behind this one), so what it tags is on main here.
+      # in the newer commit's run instead, so what it tags is on main here.
       - name: main is still at this commit
         id: head
         if: steps.token.outputs.present == 'true'
@@ -244,6 +246,25 @@ jobs:
           fi
           echo "sha=$SHA" >> "$GITHUB_OUTPUT"
           echo "$TAG is $SHA, on main"
+
+      # release-please reports a release only in the run that creates it. When this run is run again
+      # (Re-run all jobs), the release is found here instead: this commit has a release tag whose
+      # release is still a draft. The release jobs then finish it, each skipping what is done.
+      - name: an unfinished release of this commit
+        id: unfinished
+        if: steps.token.outputs.present == 'true' && steps.release-please.outputs.release_created != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN }} # a draft release shows only to writers
+        run: |
+          tag=$(gh api "repos/$GITHUB_REPOSITORY/git/matching-refs/tags/v" \
+            --jq "[.[] | select(.object.sha == \"$GITHUB_SHA\") | .ref | ltrimstr(\"refs/tags/\")] | first // empty")
+          [ -n "$tag" ] || exit 0
+          draft=$(gh api "repos/$GITHUB_REPOSITORY/releases?per_page=100" \
+            --jq "[.[] | select(.tag_name == \"$tag\" and .draft)] | length")
+          if [ "$draft" = 1 ]; then
+            echo "::notice::$tag is still a draft release, so the release jobs run again to finish it"
+            { echo "created=true"; echo "tag=$tag"; echo "version=${tag#v}"; echo "sha=$GITHUB_SHA"; } >> "$GITHUB_OUTPUT"
+          fi
 
   # The release's own commit, built with the same steps as CI (usually this run's commit, from cache).
   release-build-linux:
