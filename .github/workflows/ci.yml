@@ -56,14 +56,25 @@ jobs:
           echo "PR title ok"
 
   build-linux:
-    runs-on: ubuntu-24.04
+    name: build-linux (${{ matrix.arch }})
+    runs-on: ${{ matrix.runner }}
     # glibc 2.28, so the library loads on any Linux with glibc 2.28 or later (manylinux_2_28 wheels).
-    container: quay.io/pypa/manylinux_2_28_x86_64:2026.10.25-1@sha256:e2808351a165aa85913d79f1f8457b4f6d74047b47fba07b5b9a5e6c0055a017
+    container: ${{ matrix.image }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include: &linux
+          - arch: x64
+            runner: ubuntu-24.04
+            image: quay.io/pypa/manylinux_2_28_x86_64:2026.10.25-1@sha256:e2808351a165aa85913d79f1f8457b4f6d74047b47fba07b5b9a5e6c0055a017
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+            image: quay.io/pypa/manylinux_2_28_aarch64:2026.10.25-1@sha256:743e05864cdd8dc63dbf568898abd7ff616d121440770fda36263294c6f711c6
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: ./.github/actions/build-linux
         with:
-          artifact: lib-linux-x64
+          artifact: lib-linux-${{ matrix.arch }}
 
   build-windows:
     runs-on: windows-2025
@@ -74,27 +85,32 @@ jobs:
           artifact: lib-windows-x64
 
   test-linux:
-    name: test-linux (${{ matrix.binding }}${{ matrix.version && format(' {0}', matrix.version) || '' }})
+    name: test-linux (${{ matrix.arch == 'arm64' && 'arm64 ' || '' }}${{ matrix.binding }}${{ matrix.version && format(' {0}', matrix.version) || '' }})
     needs: build-linux
-    runs-on: ubuntu-24.04
+    runs-on: ${{ matrix.arch == 'arm64' && 'ubuntu-24.04-arm' || 'ubuntu-24.04' }}
     strategy:
       fail-fast: false
       matrix:
-        # The oldest supported version of each language, and the newest.
+        # On x64, the oldest supported version of each language and the newest; on arm64, the newest.
         include:
-          - binding: c
-          - binding: csharp
-          - { binding: python, version: "3.11" }
-          - { binding: python, version: "3.x" }
-          - { binding: node, version: "22" }
-          - { binding: node, version: "lts/*" }
-          - { binding: rust, version: "1.88" }
-          - { binding: rust, version: stable }
+          - { arch: x64, binding: c }
+          - { arch: x64, binding: csharp }
+          - { arch: x64, binding: python, version: "3.11" }
+          - { arch: x64, binding: python, version: "3.x" }
+          - { arch: x64, binding: node, version: "22" }
+          - { arch: x64, binding: node, version: "lts/*" }
+          - { arch: x64, binding: rust, version: "1.88" }
+          - { arch: x64, binding: rust, version: stable }
+          - { arch: arm64, binding: c }
+          - { arch: arm64, binding: csharp }
+          - { arch: arm64, binding: python, version: "3.x" }
+          - { arch: arm64, binding: node, version: "lts/*" }
+          - { arch: arm64, binding: rust, version: stable }
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
-          name: lib-linux-x64
+          name: lib-linux-${{ matrix.arch }}
           path: build
       - if: matrix.binding == 'python'
         uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
@@ -233,8 +249,12 @@ jobs:
   release-build-linux:
     needs: release
     if: ${{ !cancelled() && needs.release.result == 'success' && needs.release.outputs.created == 'true' }}
-    runs-on: ubuntu-24.04
-    container: quay.io/pypa/manylinux_2_28_x86_64:2026.10.25-1@sha256:e2808351a165aa85913d79f1f8457b4f6d74047b47fba07b5b9a5e6c0055a017
+    name: release-build-linux (${{ matrix.arch }})
+    runs-on: ${{ matrix.runner }}
+    container: ${{ matrix.image }}
+    strategy:
+      matrix:
+        include: *linux
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -242,7 +262,7 @@ jobs:
           persist-credentials: false
       - uses: ./.github/actions/build-linux
         with:
-          artifact: release-linux-x64
+          artifact: release-linux-${{ matrix.arch }}
 
   release-build-windows:
     needs: release
@@ -278,9 +298,13 @@ jobs:
           path: build/release/linux-x64
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
+          name: release-linux-arm64
+          path: build/release/linux-arm64
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
           name: release-windows-x64
           path: build/release/windows-x64
-      - run: scripts/package.sh "$VERSION" build/release/linux-x64 build/release/windows-x64 build/dist
+      - run: scripts/package.sh "$VERSION" build/release/linux-x64 build/release/linux-arm64 build/release/windows-x64 build/dist
         env:
           VERSION: ${{ needs.release.outputs.version }}
       - uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
@@ -366,8 +390,7 @@ jobs:
       # The platform packages first, so the bindings never point at a version that isn't there yet.
       # A version already on npm (a re-run after a partial publish) is skipped.
       - run: |
-          for package in dist/npm/mozc-ffi-linux-x64-*.tgz dist/npm/mozc-ffi-win32-x64-*.tgz dist/npm/mozc-ffi-[0-9]*.tgz \
-              dist/npm/com.malorn44.mozc-ffi-*.tgz; do
+          for package in dist/npm/mozc-ffi-[a-z]*.tgz dist/npm/mozc-ffi-[0-9]*.tgz dist/npm/com.malorn44.mozc-ffi-*.tgz; do
             spec=$(tar -xzOf "$package" package/package.json | jq -r '.name + "@" + .version')
             if npm view "$spec" version > /dev/null 2>&1; then
               echo "$spec is already on npm"

@@ -22,7 +22,7 @@ back segments with candidates. Picks you `learn` rank first next time.
 
 ## Install
 
-Each package comes with the library already built, for Linux x64 (glibc 2.28 or later) and Windows x64.
+Each package comes with the library already built, for Linux x64 and arm64 (glibc 2.28 or later) and Windows x64.
 
 | | Install | Needs |
 |---|---|---|

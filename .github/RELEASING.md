@@ -15,7 +15,7 @@ CI builds, packs and publishes everything else.
    (`.github/actions/`), usually straight from cache.
 4. `release-assets` packs everything (`scripts/package.sh`), records build provenance for all of it,
    and attaches the archives to the draft:
-   - `mozc-ffi-X.Y.Z-linux-x64.tar.gz`: `include/mozc_ffi.h`, `lib/libmozc_ffi.so`
+   - `mozc-ffi-X.Y.Z-linux-x64.tar.gz` and `-linux-arm64.tar.gz`: `include/mozc_ffi.h`, `lib/libmozc_ffi.so`
    - `mozc-ffi-X.Y.Z-windows-x64.zip`: `include/mozc_ffi.h`, `bin/mozc_ffi.dll`, `lib/mozc_ffi.lib`
    - `SHA256SUMS`
 
@@ -51,38 +51,41 @@ gh attestation verify mozc-ffi-X.Y.Z-linux-x64.tar.gz -R Malorn44/mozc-ffi
   `release`:
   - PyPI: a (pending) trusted publisher for `mozc-ffi`.
   - NuGet: a trusted publishing policy for the account.
-  - npm: a trusted publisher on each of `mozc-ffi`, `@mozc-ffi/linux-x64` and `@mozc-ffi/win32-x64`
-    (owned by the `mozc-ffi` organisation).
+  - npm: a trusted publisher on each of `mozc-ffi`, `@mozc-ffi/linux-x64`, `@mozc-ffi/linux-arm64` and
+    `@mozc-ffi/win32-x64` (owned by the `mozc-ffi` organisation).
   - crates.io: a trusted publisher on the `mozc-ffi` crate.
   - npm also holds the Unity package, `com.malorn44.mozc-ffi`, with the same trusted publisher.
 - The `releases` ruleset keeps `v*` tags from being moved or deleted.
 
-### The first npm and crates.io release
+### A package's first version on npm or crates.io
 
-npm and crates.io can only trust a workflow for a package that already exists, so the first version
-goes up by hand, and their publish jobs skip until the repository variables `NPM_TRUSTED` and
-`CRATES_TRUSTED` are `true`.
+npm and crates.io can only trust a workflow for a package that already exists, so a new package's
+first version goes up by hand. Their publish jobs run only while the repository variables
+`NPM_TRUSTED` and `CRATES_TRUSTED` are `true`.
 
-1. npm, platform packages first:
+When a release adds an npm package (a new platform, say), reserve its name with a placeholder, so
+the release's own publish is the first through the trusted publisher. npm asks for a new trusted
+publisher to be used within two days, so do this shortly before merging the release PR:
+
+1. Publish an empty `0.0.0` under the new name:
    ```sh
-   gh run download <run id> -R Malorn44/mozc-ffi -n release-packages -D /tmp/mozc-ffi-packages
-   cd /tmp/mozc-ffi-packages/npm
    npm login
-   npm publish mozc-ffi-linux-x64-X.Y.Z.tgz --access public
-   npm publish mozc-ffi-win32-x64-X.Y.Z.tgz --access public
-   npm publish mozc-ffi-X.Y.Z.tgz --access public
+   dir=$(mktemp -d)
+   printf '{"name":"%s","version":"0.0.0","description":"Placeholder; the first real version follows.","license":"BSD-3-Clause"}\n' \
+     "<new package name>" > "$dir/package.json"
+   npm publish "$dir" --access public
    ```
-2. crates.io, with a short-lived token (Account Settings → API Tokens: scope publish-new, crate
-   `mozc-ffi`), revoked afterwards:
+2. On npmjs.com, add the trusted publisher to the new package (allow publish only) and set its
+   publishing access to "Require two-factor authentication and disallow tokens".
+3. Merge the release PR and approve the deployment. `publish-npm` publishes the release's version
+   of every package, the new one included.
+4. Remove the placeholder (npm allows this for 72 hours), so it isn't offered as a version:
    ```sh
-   git clone --branch vX.Y.Z https://github.com/Malorn44/mozc-ffi /tmp/mozc-ffi-crate
-   cd /tmp/mozc-ffi-crate/bindings/rust
-   cargo login
-   cargo publish
+   npm unpublish "<new package name>@0.0.0"
    ```
-3. Add the trusted publishers on npm (and set each package's publishing access to "Require two-factor
-   authentication and disallow tokens") and on crates.io, then set `NPM_TRUSTED` and `CRATES_TRUSTED`
-   to `true` in Settings → Secrets and variables → Actions → Variables.
+
+For crates.io, the crate's first version was published by hand: `cargo publish` from the tag's
+`bindings/rust`, with a short-lived token, and then the trusted publisher added.
 
 ## When it goes wrong
 
