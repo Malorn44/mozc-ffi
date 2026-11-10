@@ -1,5 +1,5 @@
-# The Linux build, shared by CI and the release: run it in the manylinux_2_28 container, after
-# checking out the commit to build. It builds build/libmozc_ffi.so, checks what the library exports
+# The Linux build, shared by CI and the release: run it in the manylinux_2_28 container of the
+# runner's architecture (x64 or arm64), after checking out the commit to build. It builds build/libmozc_ffi.so, checks what the library exports
 # and needs, and uploads it as an artifact.
 name: build-linux
 description: Build, check and upload libmozc_ffi.so
@@ -15,14 +15,23 @@ runs:
       uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: build/bazel-cache
-        key: bazel-linux-${{ hashFiles('scripts/MOZC_COMMIT', 'scripts/build.sh', 'core/**') }}
-        restore-keys: bazel-linux-
+        key: bazel-linux-${{ runner.arch }}-${{ hashFiles('scripts/MOZC_COMMIT', 'scripts/build.sh', 'core/**') }}
+        restore-keys: |
+          bazel-linux-${{ runner.arch }}-
+          bazel-linux-${{ hashFiles('scripts/MOZC_COMMIT', 'scripts/build.sh', 'core/**') }}
     - name: Install bazelisk
       shell: bash
+      env:
+        ARCH: ${{ runner.arch }}
       run: |
+        case "$ARCH" in
+          X64) name=amd64 sha256=a248ae2b2b62b5baebb748f6fba7203bff1a27e5d01b55399a8406744cb539e8 ;;
+          ARM64) name=arm64 sha256=b2bcc040c213b44586b121bda6d983c35df121b917c3a7a66fb16f2fa0df1a4f ;;
+          *) echo "no bazelisk for $ARCH" >&2; exit 1 ;;
+        esac
         curl -fsSL --retry 5 --retry-delay 10 -o /usr/local/bin/bazelisk \
-          https://github.com/bazelbuild/bazelisk/releases/download/v1.30.0/bazelisk-linux-amd64
-        echo "a248ae2b2b62b5baebb748f6fba7203bff1a27e5d01b55399a8406744cb539e8  /usr/local/bin/bazelisk" | sha256sum -c -
+          "https://github.com/bazelbuild/bazelisk/releases/download/v1.30.0/bazelisk-linux-$name"
+        echo "$sha256  /usr/local/bin/bazelisk" | sha256sum -c -
         chmod +x /usr/local/bin/bazelisk
         echo /opt/python/cp312-cp312/bin >> "$GITHUB_PATH"
     - shell: bash
