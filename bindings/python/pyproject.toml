@@ -17,8 +17,9 @@ Repository = "https://github.com/Malorn44/mozc-ffi"
 packages = ["mozc_ffi"]
 
 [tool.setuptools.package-data]
-# The native library and the notices, placed in the package by scripts/package.sh for each wheel.
-mozc_ffi = ["*.so", "*.dll", "*.dylib", "*.md"]
+# py.typed, and the native library and the notices, which scripts/package.sh places in the package
+# for each wheel.
+mozc_ffi = ["py.typed", "*.so", "*.dll", "*.dylib", "*.md"]
 
 [tool.ruff]
 target-version = "py311"
