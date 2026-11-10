@@ -19,8 +19,8 @@ CI builds, packs and publishes everything else.
    - `mozc-ffi-X.Y.Z-windows-x64.zip`: `include/mozc_ffi.h`, `bin/mozc_ffi.dll`, `lib/mozc_ffi.lib`
    - `SHA256SUMS`
 
-   It also packs a wheel per platform, the NuGet package, and the npm packages (`mozc-ffi` and one per
-   platform). Every archive and package holds `LICENSE` and `THIRD_PARTY_NOTICES.md`.
+   It also packs a wheel per platform, the NuGet package, the npm packages (`mozc-ffi` and one per
+   platform) and the Unity package. Every archive and package holds `LICENSE` and `THIRD_PARTY_NOTICES.md`.
 5. The publish jobs wait in the `release` environment. Approve them: in the run, **Review
    deployments**, tick `release`, **Approve and deploy**. They publish to PyPI, NuGet, npm and
    crates.io through trusted publishing, so no token is stored anywhere.
@@ -54,6 +54,7 @@ gh attestation verify mozc-ffi-X.Y.Z-linux-x64.tar.gz -R Malorn44/mozc-ffi
   - npm: a trusted publisher on each of `mozc-ffi`, `@mozc-ffi/linux-x64`, `@mozc-ffi/linux-arm64` and
     `@mozc-ffi/win32-x64` (owned by the `mozc-ffi` organisation).
   - crates.io: a trusted publisher on the `mozc-ffi` crate.
+  - npm also holds the Unity package, `com.malorn44.mozc-ffi`, with the same trusted publisher.
 - The `releases` ruleset keeps `v*` tags from being moved or deleted.
 
 ### A package's first version on npm or crates.io
@@ -83,8 +84,8 @@ publisher to be used within two days, so do this shortly before merging the rele
    npm unpublish "<new package name>@0.0.0"
    ```
 
-For crates.io, the first version of the crate was published the same way: `cargo publish` from the
-tag's `bindings/rust`, with a short-lived token, and then the trusted publisher added.
+For crates.io, the crate's first version was published by hand: `cargo publish` from the tag's
+`bindings/rust`, with a short-lived token, and then the trusted publisher added.
 
 ## When it goes wrong
 

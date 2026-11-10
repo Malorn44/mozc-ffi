@@ -14,6 +14,7 @@ back segments with candidates. Picks you `learn` rank first next time.
 | `core/` | The C API (`mozc_ffi.h`) and its implementation over Mozc's converter |
 | `bindings/python/` | Python bindings (ctypes, one module) and tests |
 | `bindings/csharp/` | C# bindings (netstandard2.0, works in Unity) and tests |
+| `bindings/unity/` | The Unity package's own files (`package.json` and `.meta` files); `scripts/package.sh` adds the C# bindings and the library |
 | `bindings/rust/` | Rust bindings (the `mozc-ffi` crate) and tests |
 | `bindings/node/` | Node.js bindings (koffi, with TypeScript types) and tests |
 | `scripts/` | The build scripts, `check.sh` (every lint check and test), the pinned Mozc commit (`MOZC_COMMIT`) |
@@ -27,13 +28,35 @@ Each package comes with the library already built, for Linux x64 and arm64 (glib
 |---|---|---|
 | Python | `pip install mozc-ffi` | Python 3.11+ |
 | C# | `dotnet add package MozcFfi` | .NET Standard 2.0 |
+| Unity | The `com.malorn44.mozc-ffi` package (below) | Unity 2021.3+, Windows or Linux x64 |
 | Node.js | `npm install mozc-ffi` | Node.js 22+ |
-| Rust | `cargo add mozc-ffi` | Rust 1.88+, and the library (below) |
+| Rust | `cargo add mozc-ffi --features download` | Rust 1.88+ |
 | C | An archive from [Releases](https://github.com/Malorn44/mozc-ffi/releases) | |
 
-The Rust crate holds only the bindings, because the library is larger than crates.io allows. Download the archive for
-your platform from [Releases](https://github.com/Malorn44/mozc-ffi/releases) and either put `libmozc_ffi.so` or
-`mozc_ffi.dll` next to your executable, or set `MOZC_FFI_LIBRARY` to its path.
+The Rust crate holds only the bindings, because the library is larger than crates.io allows. Its `download` feature
+fetches the library from this version's release when building, and checks its SHA-256 (it needs `curl` and `tar`):
+
+```sh
+cargo add mozc-ffi --features download
+```
+
+To ship your program, copy the library (`mozc_ffi::DOWNLOADED_LIBRARY`) next to your executable. Without the feature,
+download the archive for your platform from [Releases](https://github.com/Malorn44/mozc-ffi/releases) and either put
+`libmozc_ffi.so` or `mozc_ffi.dll` next to your executable, or set `MOZC_FFI_LIBRARY` to its path.
+
+For Unity, add npm as a scoped registry and the package to your project's `Packages/manifest.json`, next to what is
+already there. The package holds the C# bindings and the library, and later versions show up in the Package Manager:
+
+```json
+{
+  "scopedRegistries": [
+    { "name": "npm", "url": "https://registry.npmjs.org", "scopes": ["com.malorn44"] }
+  ],
+  "dependencies": {
+    "com.malorn44.mozc-ffi": "0.2.0"
+  }
+}
+```
 
 The archives hold the header, the library and, on Windows, the import library. `SHA256SUMS` lists their checksums.
 

@@ -11,6 +11,7 @@ Google 製のオープンソース日本語かな漢字変換エンジン [Mozc]
 | `core/` | C API（`mozc_ffi.h`）と、Mozc の変換エンジンを使ったその実装 |
 | `bindings/python/` | Python バインディング（ctypes、1 モジュール）とテスト |
 | `bindings/csharp/` | C# バインディング（netstandard2.0、Unity でも動作）とテスト |
+| `bindings/unity/` | Unity パッケージ用のファイル（`package.json` と `.meta`）。`scripts/package.sh` が C# バインディングとライブラリを加えます |
 | `bindings/rust/` | Rust バインディング（`mozc-ffi` クレート）とテスト |
 | `bindings/node/` | Node.js バインディング（koffi、TypeScript の型定義付き）とテスト |
 | `scripts/` | ビルドスクリプト、`check.sh`（すべての lint とテスト）、固定した Mozc のコミット（`MOZC_COMMIT`） |
@@ -24,11 +25,31 @@ Google 製のオープンソース日本語かな漢字変換エンジン [Mozc]
 |---|---|---|
 | Python | `pip install mozc-ffi` | Python 3.11 以降 |
 | C# | `dotnet add package MozcFfi` | .NET Standard 2.0 |
+| Unity | `com.malorn44.mozc-ffi` パッケージ（下記） | Unity 2021.3 以降、Windows または Linux の x64 |
 | Node.js | `npm install mozc-ffi` | Node.js 22 以降 |
-| Rust | `cargo add mozc-ffi` | Rust 1.88 以降と、ライブラリ（下記） |
+| Rust | `cargo add mozc-ffi --features download` | Rust 1.88 以降 |
 | C | [Releases](https://github.com/Malorn44/mozc-ffi/releases) のアーカイブ | |
 
-Rust のクレートに入っているのはバインディングだけです。ライブラリが crates.io の上限より大きいためです。[Releases](https://github.com/Malorn44/mozc-ffi/releases) から使用する環境のアーカイブをダウンロードし、`libmozc_ffi.so` または `mozc_ffi.dll` を実行ファイルと同じ場所に置くか、`MOZC_FFI_LIBRARY` にそのパスを設定してください。
+Rust のクレートに入っているのはバインディングだけです。ライブラリが crates.io の上限より大きいためです。`download` フィーチャーを有効にすると、ビルド時にそのバージョンのリリースからライブラリを取得し、SHA-256 を検証します（`curl` と `tar` が必要です）。
+
+```sh
+cargo add mozc-ffi --features download
+```
+
+プログラムを配布するときは、ライブラリ（`mozc_ffi::DOWNLOADED_LIBRARY`）を実行ファイルと同じ場所にコピーしてください。フィーチャーを使わない場合は、[Releases](https://github.com/Malorn44/mozc-ffi/releases) から使用する環境のアーカイブをダウンロードし、`libmozc_ffi.so` または `mozc_ffi.dll` を実行ファイルと同じ場所に置くか、`MOZC_FFI_LIBRARY` にそのパスを設定してください。
+
+Unity では、プロジェクトの `Packages/manifest.json` に、npm をスコープ付きレジストリとして追加し、パッケージを依存関係に加えてください（既存の内容はそのまま残します）。パッケージには C# バインディングとライブラリが入っており、新しいバージョンは Package Manager に表示されます。
+
+```json
+{
+  "scopedRegistries": [
+    { "name": "npm", "url": "https://registry.npmjs.org", "scopes": ["com.malorn44"] }
+  ],
+  "dependencies": {
+    "com.malorn44.mozc-ffi": "0.2.0"
+  }
+}
+```
 
 アーカイブには、ヘッダー、ライブラリ、そして Windows 用にはインポートライブラリが入っています。チェックサムは `SHA256SUMS` にあります。
 
