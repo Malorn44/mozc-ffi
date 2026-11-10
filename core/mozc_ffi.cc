@@ -40,6 +40,7 @@ struct mozc_ffi_result {
   struct Segment {
     std::string reading;
     std::vector<std::string> candidates;
+    std::vector<std::string> descriptions;  // One per candidate.
   };
   std::vector<Segment> segments;
 };
@@ -47,6 +48,20 @@ struct mozc_ffi_result {
 namespace {
 
 using mozc::ConversionRequest;
+
+// What mozc_ffi_last_error returns: always a string literal, so it needs no
+// cleanup and can never hold what was typed.
+thread_local const char* last_error = "";
+
+template <typename T>
+T Fail(const char* why, T value) {
+  last_error = why;
+  return value;
+}
+
+constexpr char kNoHandle[] = "the mozc handle is NULL";
+constexpr char kNoReading[] = "the reading is empty";
+constexpr char kNotSaved[] = "Mozc could not write the profile";
 
 absl::string_view View(const char* text) {
   return text == nullptr ? absl::string_view() : absl::string_view(text);
@@ -86,22 +101,23 @@ mozc::commands::Context MakeContext(const mozc_ffi& mozc,
   return context;
 }
 
-// Converts `reading`, then cuts it into `lengths` when given.
-bool Convert(const mozc_ffi& mozc, absl::string_view reading,
-             absl::Span<const int32_t> lengths, absl::string_view preceding,
-             mozc::Segments* segments) {
+// Converts `reading`, then cuts it into `lengths` when given. Returns why it
+// failed, or nullptr.
+const char* Convert(const mozc_ffi& mozc, absl::string_view reading,
+                    absl::Span<const int32_t> lengths,
+                    absl::string_view preceding, mozc::Segments* segments) {
   std::vector<uint8_t> sizes;
   if (!lengths.empty()) {
     size_t total = 0;
     for (const int32_t length : lengths) {
       if (length <= 0 || length > 255) {
-        return false;
+        return "a segment length is not between 1 and 255";
       }
       total += length;
       sizes.push_back(static_cast<uint8_t>(length));
     }
     if (total != mozc::Util::CharsLen(reading)) {
-      return false;
+      return "the segment lengths do not add up to the reading's length";
     }
   }
   const mozc::commands::Context context =
@@ -109,23 +125,23 @@ bool Convert(const mozc_ffi& mozc, absl::string_view reading,
   const ConversionRequest request =
       MakeRequest(mozc, ConversionRequest::CONVERSION, reading, context);
   if (!mozc.converter->StartConversion(request, segments)) {
-    return false;
+    return "Mozc could not convert the reading";
   }
   if (sizes.empty()) {
-    return true;
+    return nullptr;
   }
-  if (!mozc.converter->ResizeSegments(segments, request, 0, sizes)) {
-    return false;
-  }
-  if (segments->conversion_segments_size() != sizes.size()) {
-    return false;
+  constexpr char kNotCut[] =
+      "Mozc could not cut the reading into those segment lengths";
+  if (!mozc.converter->ResizeSegments(segments, request, 0, sizes) ||
+      segments->conversion_segments_size() != sizes.size()) {
+    return kNotCut;
   }
   for (size_t i = 0; i < sizes.size(); ++i) {
     if (segments->conversion_segment(i).key_len() != sizes[i]) {
-      return false;
+      return kNotCut;
     }
   }
-  return true;
+  return nullptr;
 }
 
 mozc_ffi_result* MakeResult(const mozc::Segments& segments) {
@@ -138,9 +154,10 @@ mozc_ffi_result* MakeResult(const mozc::Segments& segments) {
     // Mozc's own candidate window does. learn() commits the first of them.
     std::unordered_set<std::string> seen;
     for (int j = 0; j < static_cast<int>(segment.candidates_size()); ++j) {
-      const std::string& value = segment.candidate(j).value;
-      if (seen.insert(value).second) {
-        out.candidates.push_back(value);
+      const auto& candidate = segment.candidate(j);
+      if (seen.insert(candidate.value).second) {
+        out.candidates.push_back(candidate.value);
+        out.descriptions.push_back(candidate.description);
       }
     }
     result->segments.push_back(std::move(out));
@@ -169,21 +186,25 @@ const char* mozc_ffi_mozc_version(void) {
   return version->c_str();
 }
 
+const char* mozc_ffi_last_error(void) { return last_error; }
+
 mozc_ffi* mozc_ffi_open(const char* profile_dir, int32_t flags) {
+  last_error = "";
   if (profile_dir != nullptr && *profile_dir != '\0') {
     std::error_code error;
     const std::filesystem::path path(
         std::u8string(reinterpret_cast<const char8_t*>(profile_dir)));
     std::filesystem::create_directories(path, error);
     if (error) {
-      return nullptr;
+      return Fail<mozc_ffi*>("the profile directory could not be created",
+                             nullptr);
     }
     mozc::SystemUtil::SetUserProfileDirectory(profile_dir);
   }
   auto engine =
       mozc::Engine::CreateEngine(std::make_unique<mozc::oss::OssDataManager>());
   if (!engine.ok()) {
-    return nullptr;
+    return Fail<mozc_ffi*>("Mozc's engine could not start", nullptr);
   }
   auto mozc = std::make_unique<mozc_ffi>();
   mozc->engine = std::move(engine).value();
@@ -208,23 +229,35 @@ void mozc_ffi_close(mozc_ffi* mozc) {
 mozc_ffi_result* mozc_ffi_convert(mozc_ffi* mozc, const char* reading,
                                   const int32_t* lengths, int32_t n_lengths,
                                   const char* context) {
-  if (mozc == nullptr || View(reading).empty() || n_lengths < 0 ||
-      (n_lengths > 0 && lengths == nullptr)) {
-    return nullptr;
+  last_error = "";
+  if (mozc == nullptr) {
+    return Fail<mozc_ffi_result*>(kNoHandle, nullptr);
+  }
+  if (View(reading).empty()) {
+    return Fail<mozc_ffi_result*>(kNoReading, nullptr);
+  }
+  if (n_lengths < 0 || (n_lengths > 0 && lengths == nullptr)) {
+    return Fail<mozc_ffi_result*>("lengths is NULL or its count is negative",
+                                  nullptr);
   }
   std::lock_guard<std::mutex> lock(mozc->mutex);
   mozc::Segments segments;
-  if (!Convert(*mozc, reading, absl::MakeConstSpan(lengths, n_lengths),
-               View(context), &segments)) {
-    return nullptr;
+  if (const char* why =
+          Convert(*mozc, reading, absl::MakeConstSpan(lengths, n_lengths),
+                  View(context), &segments)) {
+    return Fail<mozc_ffi_result*>(why, nullptr);
   }
   return MakeResult(segments);
 }
 
 mozc_ffi_result* mozc_ffi_predict(mozc_ffi* mozc, const char* reading,
                                   const char* context) {
-  if (mozc == nullptr || View(reading).empty()) {
-    return nullptr;
+  last_error = "";
+  if (mozc == nullptr) {
+    return Fail<mozc_ffi_result*>(kNoHandle, nullptr);
+  }
+  if (View(reading).empty()) {
+    return Fail<mozc_ffi_result*>(kNoReading, nullptr);
   }
   std::lock_guard<std::mutex> lock(mozc->mutex);
   mozc::Segments segments;
@@ -264,26 +297,42 @@ const char* mozc_ffi_candidate(const mozc_ffi_result* result, int32_t segment,
   return found->candidates[index].c_str();
 }
 
+const char* mozc_ffi_candidate_description(const mozc_ffi_result* result,
+                                           int32_t segment, int32_t index) {
+  const mozc_ffi_result::Segment* found = GetSegment(result, segment);
+  if (found == nullptr || index < 0 ||
+      static_cast<size_t>(index) >= found->descriptions.size()) {
+    return nullptr;
+  }
+  return found->descriptions[index].c_str();
+}
+
 void mozc_ffi_result_free(mozc_ffi_result* result) { delete result; }
 
 int32_t mozc_ffi_learn(mozc_ffi* mozc, const char* reading,
                        const int32_t* lengths, const char* const* texts,
                        int32_t n, const char* context) {
-  if (mozc == nullptr || View(reading).empty() || n <= 0 ||
-      lengths == nullptr || texts == nullptr) {
-    return 0;
+  last_error = "";
+  if (mozc == nullptr) {
+    return Fail(kNoHandle, 0);
+  }
+  if (View(reading).empty()) {
+    return Fail(kNoReading, 0);
+  }
+  if (n <= 0 || lengths == nullptr || texts == nullptr) {
+    return Fail("lengths or texts is NULL, or there are no segments", 0);
   }
   std::lock_guard<std::mutex> lock(mozc->mutex);
   mozc::Segments segments;
-  if (!Convert(*mozc, reading, absl::MakeConstSpan(lengths, n), View(context),
-               &segments)) {
-    return 0;
+  if (const char* why = Convert(*mozc, reading, absl::MakeConstSpan(lengths, n),
+                                View(context), &segments)) {
+    return Fail(why, 0);
   }
   // Find every pick before committing any, so a mismatch learns nothing.
   std::vector<int> picks;
   for (int32_t i = 0; i < n; ++i) {
     if (texts[i] == nullptr) {
-      return 0;
+      return Fail("a text is NULL", 0);
     }
     const mozc::Segment& segment = segments.conversion_segment(i);
     int pick = -1;
@@ -294,13 +343,13 @@ int32_t mozc_ffi_learn(mozc_ffi* mozc, const char* reading,
       }
     }
     if (pick < 0) {
-      return 0;
+      return Fail("a text is not a candidate of its segment", 0);
     }
     picks.push_back(pick);
   }
   for (int32_t i = 0; i < n; ++i) {
     if (!mozc->converter->CommitSegmentValue(&segments, i, picks[i])) {
-      return 0;
+      return Fail("Mozc could not commit a candidate", 0);
     }
   }
   mozc::commands::Context preceding;
@@ -314,21 +363,25 @@ int32_t mozc_ffi_learn(mozc_ffi* mozc, const char* reading,
 }
 
 int32_t mozc_ffi_clear_learning(mozc_ffi* mozc) {
+  last_error = "";
   if (mozc == nullptr) {
-    return 0;
+    return Fail(kNoHandle, 0);
   }
   std::lock_guard<std::mutex> lock(mozc->mutex);
-  const bool cleared =
-      mozc->engine->ClearUserHistory() && mozc->engine->ClearUserPrediction();
-  return cleared && mozc->engine->Sync() && mozc->engine->Wait() ? 1 : 0;
+  if (!mozc->engine->ClearUserHistory() ||
+      !mozc->engine->ClearUserPrediction()) {
+    return Fail("Mozc could not clear what it learned", 0);
+  }
+  return mozc->engine->Sync() && mozc->engine->Wait() ? 1 : Fail(kNotSaved, 0);
 }
 
 int32_t mozc_ffi_flush(mozc_ffi* mozc) {
+  last_error = "";
   if (mozc == nullptr) {
-    return 0;
+    return Fail(kNoHandle, 0);
   }
   std::lock_guard<std::mutex> lock(mozc->mutex);
-  return mozc->engine->Sync() && mozc->engine->Wait() ? 1 : 0;
+  return mozc->engine->Sync() && mozc->engine->Wait() ? 1 : Fail(kNotSaved, 0);
 }
 
 }  // extern "C"

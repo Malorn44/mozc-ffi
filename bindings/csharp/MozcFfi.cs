@@ -12,14 +12,18 @@ namespace MozcFfi
     /// <summary>A segment of the reading and its candidates, best first.</summary>
     public sealed class Segment
     {
-        public Segment(string reading, IReadOnlyList<string> candidates)
+        public Segment(string reading, IReadOnlyList<string> candidates, IReadOnlyList<string> descriptions = null)
         {
             Reading = reading;
             Candidates = candidates;
+            Descriptions = descriptions ?? new string[candidates.Count];
         }
 
         public string Reading { get; }
         public IReadOnlyList<string> Candidates { get; }
+
+        /// <summary>Mozc's note on each candidate (its script, an emoji's name), in Japanese; "" if none.</summary>
+        public IReadOnlyList<string> Descriptions { get; }
     }
 
     public sealed class MozcException : Exception
@@ -33,7 +37,7 @@ namespace MozcFfi
     /// </summary>
     public sealed class Mozc : IDisposable
     {
-        public const int AbiVersion = 1;
+        public const int AbiVersion = 2;
         const int Incognito = 1;
 
         readonly Native.Handle handle;
@@ -47,10 +51,13 @@ namespace MozcFfi
                 throw new MozcException($"mozc_ffi has ABI {abi}, these bindings need {AbiVersion}");
             handle = Native.mozc_ffi_open(Utf8(profileDir), incognito ? Incognito : 0);
             if (handle.IsInvalid)
-                throw new MozcException("mozc_ffi_open failed");
+                throw new MozcException("mozc_ffi_open failed: " + Reason());
         }
 
         public static string MozcVersion => FromUtf8(Native.mozc_ffi_mozc_version());
+
+        /// <summary>Why the last Convert, Predict, Learn, ClearLearning or Flush failed; "" if it succeeded.</summary>
+        public string LastError { get; private set; } = "";
 
         /// <summary>Segments of the reading; empty if it can't be converted as asked.</summary>
         /// <param name="lengths">Fixes the segments: one length per segment, summing to the reading's length.</param>
@@ -58,13 +65,17 @@ namespace MozcFfi
         public IReadOnlyList<Segment> Convert(string reading, IReadOnlyList<int> lengths = null, string context = null)
         {
             int[] sizes = ToArray(lengths);
-            return Read(Native.mozc_ffi_convert(handle, Utf8(reading), sizes, sizes.Length, Utf8(context)));
+            IntPtr result = Native.mozc_ffi_convert(handle, Utf8(reading), sizes, sizes.Length, Utf8(context));
+            LastError = Reason();
+            return Read(result);
         }
 
         /// <summary>Completions of the reading typed so far.</summary>
         public IReadOnlyList<string> Predict(string reading, string context = null)
         {
-            var segments = Read(Native.mozc_ffi_predict(handle, Utf8(reading), Utf8(context)));
+            IntPtr result = Native.mozc_ffi_predict(handle, Utf8(reading), Utf8(context));
+            LastError = Reason();
+            var segments = Read(result);
             return segments.Count > 0 ? segments[0].Candidates : Array.Empty<string>();
         }
 
@@ -75,7 +86,7 @@ namespace MozcFfi
         public bool Learn(string reading, IReadOnlyList<int> lengths, IReadOnlyList<string> texts, string context = null)
         {
             if (lengths == null || texts == null || texts.Count == 0 || lengths.Count != texts.Count)
-                return false;
+                return Fail("lengths and texts must be the same length, and not empty");
             var pointers = new IntPtr[texts.Count];
             try
             {
@@ -83,12 +94,12 @@ namespace MozcFfi
                 {
                     byte[] text = Utf8(texts[i]);
                     if (text == null)
-                        return false;
+                        return Fail("a text is null");
                     pointers[i] = Marshal.AllocHGlobal(text.Length);
                     Marshal.Copy(text, 0, pointers[i], text.Length);
                 }
-                return Native.mozc_ffi_learn(handle, Utf8(reading), ToArray(lengths), pointers, texts.Count,
-                                             Utf8(context)) == 1;
+                return Ok(Native.mozc_ffi_learn(handle, Utf8(reading), ToArray(lengths), pointers, texts.Count,
+                                                Utf8(context)));
             }
             finally
             {
@@ -99,13 +110,27 @@ namespace MozcFfi
         }
 
         /// <summary>Forgets everything learned.</summary>
-        public bool ClearLearning() => Native.mozc_ffi_clear_learning(handle) == 1;
+        public bool ClearLearning() => Ok(Native.mozc_ffi_clear_learning(handle));
 
         /// <summary>Writes what was learned to the profile.</summary>
-        public bool Flush() => Native.mozc_ffi_flush(handle) == 1;
+        public bool Flush() => Ok(Native.mozc_ffi_flush(handle));
 
         /// <summary>Saves what was learned and frees the engine.</summary>
         public void Dispose() => handle.Dispose();
+
+        static string Reason() => FromUtf8(Native.mozc_ffi_last_error()) ?? "";
+
+        bool Ok(int status)
+        {
+            LastError = Reason();
+            return status == 1;
+        }
+
+        bool Fail(string why)
+        {
+            LastError = why;
+            return false;
+        }
 
         static int[] ToArray(IReadOnlyList<int> values)
         {
@@ -146,9 +171,14 @@ namespace MozcFfi
                 for (int s = 0; s < segments.Length; s++)
                 {
                     var candidates = new string[Native.mozc_ffi_candidate_count(result, s)];
+                    var descriptions = new string[candidates.Length];
                     for (int c = 0; c < candidates.Length; c++)
+                    {
                         candidates[c] = FromUtf8(Native.mozc_ffi_candidate(result, s, c));
-                    segments[s] = new Segment(FromUtf8(Native.mozc_ffi_segment_reading(result, s)), candidates);
+                        descriptions[c] = FromUtf8(Native.mozc_ffi_candidate_description(result, s, c)) ?? "";
+                    }
+                    segments[s] = new Segment(FromUtf8(Native.mozc_ffi_segment_reading(result, s)), candidates,
+                                              descriptions);
                 }
                 return segments;
             }
@@ -181,6 +211,9 @@ namespace MozcFfi
             internal static extern IntPtr mozc_ffi_mozc_version();
 
             [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
+            internal static extern IntPtr mozc_ffi_last_error();
+
+            [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
             internal static extern Handle mozc_ffi_open(byte[] profileDir, int flags);
 
             [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
@@ -204,6 +237,9 @@ namespace MozcFfi
 
             [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
             internal static extern IntPtr mozc_ffi_candidate(IntPtr result, int segment, int index);
+
+            [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
+            internal static extern IntPtr mozc_ffi_candidate_description(IntPtr result, int segment, int index);
 
             [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
             internal static extern void mozc_ffi_result_free(IntPtr result);

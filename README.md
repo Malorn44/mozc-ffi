@@ -99,6 +99,9 @@ mozc.close();
 Each binding loads the library when it opens Mozc: from `MOZC_FFI_LIBRARY`, next to the program (or package), or the
 system's library path. It stays loaded until the process exits.
 
+A call that can't do what was asked returns nothing (an empty list, or false); `last_error` then says why, in English,
+without ever quoting what was typed.
+
 Segment lengths count Unicode characters. Mozc keeps the profile directory per process, so open one profile per
 process. `incognito` learns nothing.
 
