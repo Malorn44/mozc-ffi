@@ -19,9 +19,27 @@ back segments with candidates. Picks you `learn` rank first next time.
 | `scripts/` | The build scripts, `check.sh` (every lint check and test), the pinned Mozc commit (`MOZC_COMMIT`) |
 | `tests/` | `chat.tsv`, everyday chat sentences used by every test suite, and `smoke.c`, a C program using the API |
 
+## Install
+
+Each package comes with the library already built, for Linux x64 (glibc 2.28 or later) and Windows x64.
+
+| | Install | Needs |
+|---|---|---|
+| Python | `pip install mozc-ffi` | Python 3.11+ |
+| C# | `dotnet add package MozcFfi` | .NET Standard 2.0 |
+| Node.js | `npm install mozc-ffi` | Node.js 22+ |
+| Rust | `cargo add mozc-ffi` | Rust 1.88+, and the library (below) |
+| C | An archive from [Releases](https://github.com/Malorn44/mozc-ffi/releases) | |
+
+The Rust crate holds only the bindings, because the library is larger than crates.io allows. Download the archive for
+your platform from [Releases](https://github.com/Malorn44/mozc-ffi/releases) and either put `libmozc_ffi.so` or
+`mozc_ffi.dll` next to your executable, or set `MOZC_FFI_LIBRARY` to its path.
+
+The archives hold the header, the library and, on Windows, the import library. `SHA256SUMS` lists their checksums.
+
 ## Build
 
-Both scripts fetch Mozc at the commit in `scripts/MOZC_COMMIT` into `build/mozc` and build `core/` inside its source
+To build the library yourself instead: both scripts fetch Mozc at the commit in `scripts/MOZC_COMMIT` into `build/mozc` and build `core/` inside its source
 tree. The first build downloads Mozc's dependencies and takes a while. Everything built lands in `build/`, so deleting
 it is a full clean.
 
