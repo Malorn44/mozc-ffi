@@ -1,0 +1,15 @@
+{
+  "name": "com.malorn44.mozc-ffi",
+  "version": "0.1.0",
+  "displayName": "Mozc FFI",
+  "description": "Unofficial C# bindings for Google's Mozc kana-kanji converter, in process, with the native library for Windows x64 and Linux x64.",
+  "unity": "2021.3",
+  "license": "BSD-3-Clause",
+  "author": { "name": "Mara Schwartz", "url": "https://github.com/Malorn44" },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Malorn44/mozc-ffi.git",
+    "directory": "bindings/unity"
+  },
+  "keywords": ["japanese", "mozc", "ime", "kana-kanji"]
+}

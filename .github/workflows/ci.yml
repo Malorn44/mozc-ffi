@@ -365,7 +365,8 @@ jobs:
       # The platform packages first, so the bindings never point at a version that isn't there yet.
       # A version already on npm (a re-run after a partial publish) is skipped.
       - run: |
-          for package in dist/npm/mozc-ffi-linux-x64-*.tgz dist/npm/mozc-ffi-win32-x64-*.tgz dist/npm/mozc-ffi-[0-9]*.tgz; do
+          for package in dist/npm/mozc-ffi-linux-x64-*.tgz dist/npm/mozc-ffi-win32-x64-*.tgz dist/npm/mozc-ffi-[0-9]*.tgz \
+              dist/npm/com.malorn44.mozc-ffi-*.tgz; do
             spec=$(tar -xzOf "$package" package/package.json | jq -r '.name + "@" + .version')
             if npm view "$spec" version > /dev/null 2>&1; then
               echo "$spec is already on npm"
