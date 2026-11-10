@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.1](https://github.com/Malorn44/mozc-ffi/compare/v0.1.0...v0.1.1) (2026-11-10)
+
+
+### Bug Fixes
+
+* **python:** mark the package as typed ([#15](https://github.com/Malorn44/mozc-ffi/issues/15)) ([c6dddd5](https://github.com/Malorn44/mozc-ffi/commit/c6dddd5cea0f104afca9064a56d8d9a64a29d479))
+
 ## 0.1.0 (2026-11-09)
 
 
