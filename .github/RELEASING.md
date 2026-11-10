@@ -15,7 +15,7 @@ CI builds, packs and publishes everything else.
    (`.github/actions/`), usually straight from cache.
 4. `release-assets` packs everything (`scripts/package.sh`), records build provenance for all of it,
    and attaches the archives to the draft:
-   - `mozc-ffi-X.Y.Z-linux-x64.tar.gz`: `include/mozc_ffi.h`, `lib/libmozc_ffi.so`
+   - `mozc-ffi-X.Y.Z-linux-x64.tar.gz` and `-linux-arm64.tar.gz`: `include/mozc_ffi.h`, `lib/libmozc_ffi.so`
    - `mozc-ffi-X.Y.Z-windows-x64.zip`: `include/mozc_ffi.h`, `bin/mozc_ffi.dll`, `lib/mozc_ffi.lib`
    - `SHA256SUMS`
 
@@ -51,37 +51,36 @@ gh attestation verify mozc-ffi-X.Y.Z-linux-x64.tar.gz -R Malorn44/mozc-ffi
   `release`:
   - PyPI: a (pending) trusted publisher for `mozc-ffi`.
   - NuGet: a trusted publishing policy for the account.
-  - npm: a trusted publisher on each of `mozc-ffi`, `@mozc-ffi/linux-x64` and `@mozc-ffi/win32-x64`
-    (owned by the `mozc-ffi` organisation).
+  - npm: a trusted publisher on each of `mozc-ffi`, `@mozc-ffi/linux-x64`, `@mozc-ffi/linux-arm64` and
+    `@mozc-ffi/win32-x64` (owned by the `mozc-ffi` organisation).
   - crates.io: a trusted publisher on the `mozc-ffi` crate.
 - The `releases` ruleset keeps `v*` tags from being moved or deleted.
 
-### The first npm and crates.io release
+### A package's first version on npm or crates.io
 
-npm and crates.io can only trust a workflow for a package that already exists, so the first version
-goes up by hand, and their publish jobs skip until the repository variables `NPM_TRUSTED` and
-`CRATES_TRUSTED` are `true`.
+npm and crates.io can only trust a workflow for a package that already exists, so a new package's
+first version goes up by hand. Their publish jobs run only while the repository variables
+`NPM_TRUSTED` and `CRATES_TRUSTED` are `true`.
 
-1. npm, platform packages first:
+When a release adds an npm package (a new platform, say):
+
+1. Let the release run reach the approval step, but don't approve yet.
+2. Publish the new package from what the run built:
    ```sh
    gh run download <run id> -R Malorn44/mozc-ffi -n release-packages -D /tmp/mozc-ffi-packages
    cd /tmp/mozc-ffi-packages/npm
    npm login
-   npm publish mozc-ffi-linux-x64-X.Y.Z.tgz --access public
-   npm publish mozc-ffi-win32-x64-X.Y.Z.tgz --access public
-   npm publish mozc-ffi-X.Y.Z.tgz --access public
+   npm publish mozc-ffi-<platform>-X.Y.Z.tgz --access public
    ```
-2. crates.io, with a short-lived token (Account Settings → API Tokens: scope publish-new, crate
-   `mozc-ffi`), revoked afterwards:
-   ```sh
-   git clone --branch vX.Y.Z https://github.com/Malorn44/mozc-ffi /tmp/mozc-ffi-crate
-   cd /tmp/mozc-ffi-crate/bindings/rust
-   cargo login
-   cargo publish
-   ```
-3. Add the trusted publishers on npm (and set each package's publishing access to "Require two-factor
-   authentication and disallow tokens") and on crates.io, then set `NPM_TRUSTED` and `CRATES_TRUSTED`
-   to `true` in Settings → Secrets and variables → Actions → Variables.
+3. On npmjs.com, add the trusted publisher to the new package (allow publish only) and set its
+   publishing access to "Require two-factor authentication and disallow tokens".
+4. Approve the deployment. The job skips the version already there and publishes the rest.
+
+A new trusted publisher has to be used within two days or npm drops it, so add it just before a
+release rather than ahead of time.
+
+For crates.io, the first version of the crate was published the same way: `cargo publish` from the
+tag's `bindings/rust`, with a short-lived token, and then the trusted publisher added.
 
 ## When it goes wrong
 

@@ -298,9 +298,13 @@ jobs:
           path: build/release/linux-x64
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
+          name: release-linux-arm64
+          path: build/release/linux-arm64
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
           name: release-windows-x64
           path: build/release/windows-x64
-      - run: scripts/package.sh "$VERSION" build/release/linux-x64 build/release/windows-x64 build/dist
+      - run: scripts/package.sh "$VERSION" build/release/linux-x64 build/release/linux-arm64 build/release/windows-x64 build/dist
         env:
           VERSION: ${{ needs.release.outputs.version }}
       - uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
@@ -385,7 +389,7 @@ jobs:
       # The platform packages first, so the bindings never point at a version that isn't there yet.
       # A version already on npm (a re-run after a partial publish) is skipped.
       - run: |
-          for package in dist/npm/mozc-ffi-linux-x64-*.tgz dist/npm/mozc-ffi-win32-x64-*.tgz dist/npm/mozc-ffi-[0-9]*.tgz; do
+          for package in dist/npm/mozc-ffi-[a-z]*.tgz dist/npm/mozc-ffi-[0-9]*.tgz; do
             spec=$(tar -xzOf "$package" package/package.json | jq -r '.name + "@" + .version')
             if npm view "$spec" version > /dev/null 2>&1; then
               echo "$spec is already on npm"
