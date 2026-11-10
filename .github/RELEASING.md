@@ -76,8 +76,8 @@ When a release adds an npm package (a new platform, say):
    publishing access to "Require two-factor authentication and disallow tokens".
 4. Approve the deployment. The job skips the version already there and publishes the rest.
 
-A new trusted publisher has to be used within two days or npm drops it, so add it just before a
-release rather than ahead of time.
+npm asks for a new trusted publisher to be used within two days, so add it just before a release
+rather than ahead of time.
 
 For crates.io, the first version of the crate was published the same way: `cargo publish` from the
 tag's `bindings/rust`, with a short-lived token, and then the trusted publisher added.
