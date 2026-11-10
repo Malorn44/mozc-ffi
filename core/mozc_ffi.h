@@ -28,9 +28,15 @@
 extern "C" {
 #endif
 
-/* Bumped whenever a function below changes. Wrappers check it on load. */
-#define MOZC_FFI_ABI_VERSION 1
+/* Bumped whenever the functions below change. Wrappers check it on load. */
+#define MOZC_FFI_ABI_VERSION 2
 MOZC_FFI_API int32_t mozc_ffi_abi_version(void);
+
+/* Why the last mozc_ffi_open, convert, predict, learn, clear_learning or
+ * flush on this thread failed, in English, or "" if it succeeded. A fixed
+ * string that never holds what was typed; valid for the life of the
+ * process. */
+MOZC_FFI_API const char* mozc_ffi_last_error(void);
 
 /* Mozc's version, such as "2.32.5994.102". */
 MOZC_FFI_API const char* mozc_ffi_mozc_version(void);
@@ -43,7 +49,7 @@ typedef struct mozc_ffi_result mozc_ffi_result;
 
 /* profile_dir holds what Mozc learns; it is created if missing. NULL or ""
  * uses Mozc's default (~/.mozc on Linux). The dictionary is built in.
- * Returns NULL on failure. */
+ * Returns NULL on failure (see mozc_ffi_last_error). */
 MOZC_FFI_API mozc_ffi* mozc_ffi_open(const char* profile_dir, int32_t flags);
 /* Saves what was learned and frees the handle. */
 MOZC_FFI_API void mozc_ffi_close(mozc_ffi* mozc);
@@ -72,6 +78,10 @@ MOZC_FFI_API int32_t mozc_ffi_candidate_count(const mozc_ffi_result* result,
                                               int32_t segment);
 MOZC_FFI_API const char* mozc_ffi_candidate(const mozc_ffi_result* result,
                                             int32_t segment, int32_t index);
+/* Mozc's note on a candidate, such as its script or which homophone it is,
+ * in Japanese; "" if it has none. */
+MOZC_FFI_API const char* mozc_ffi_candidate_description(
+    const mozc_ffi_result* result, int32_t segment, int32_t index);
 MOZC_FFI_API void mozc_ffi_result_free(mozc_ffi_result* result);
 
 /* Learns a conversion the user sent: the reading cut into n segments of

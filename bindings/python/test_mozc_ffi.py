@@ -55,7 +55,7 @@ class ConvertTest(unittest.TestCase):
         self.mozc.close()
 
     def test_versions(self) -> None:
-        self.assertEqual(ABI_VERSION, 1)
+        self.assertEqual(ABI_VERSION, 2)
         self.assertRegex(self.mozc.mozc_version, r"^\d+\.\d+\.\d+\.\d+$")
 
     def test_segments_cover_the_reading(self) -> None:
@@ -67,6 +67,13 @@ class ConvertTest(unittest.TestCase):
     def test_no_candidate_twice(self) -> None:
         candidates = self.mozc.convert("かんじ", [3])[0].candidates
         self.assertEqual(len(candidates), len(set(candidates)), candidates)
+
+    def test_candidates_have_descriptions(self) -> None:
+        segment = self.mozc.convert("かんじ", [3])[0]
+        self.assertEqual(len(segment.descriptions), len(segment.candidates))
+        described = dict(zip(segment.candidates, segment.descriptions, strict=True))
+        self.assertEqual(described["カンジ"], "カタカナ")
+        self.assertEqual(described["漢字"], "")
 
     def test_lengths_fix_the_segments(self) -> None:
         segments = self.mozc.convert("ここではきものをぬぐ", [3, 5, 2])
@@ -80,6 +87,16 @@ class ConvertTest(unittest.TestCase):
         self.assertEqual(self.mozc.convert("ここではきものをぬぐ", [3, 3]), [])
         self.assertEqual(self.mozc.convert("ここではきものをぬぐ", [0, 10]), [])
         self.assertEqual(self.mozc.convert(""), [])
+
+    def test_a_failure_says_why(self) -> None:
+        self.assertEqual(self.mozc.convert("ここではきものをぬぐ", [3, 3]), [])
+        self.assertIn("do not add up", self.mozc.last_error)
+        self.assertFalse(self.mozc.learn("かんじ", [3], ["not a candidate"]))
+        self.assertIn("not a candidate", self.mozc.last_error)
+        self.assertFalse(self.mozc.learn("かんじ", [3], []))
+        self.assertIn("differ in length", self.mozc.last_error)
+        self.assertTrue(self.mozc.convert("かんじ"))
+        self.assertEqual(self.mozc.last_error, "")
 
     def test_predict_completes(self) -> None:
         predictions = self.mozc.predict("ありがと")

@@ -64,7 +64,7 @@ fn reachable(target: &str, segments: &[Segment]) -> bool {
 fn converts_and_predicts() {
     let (_guard, dir) = profile();
     let mozc = open(dir, true);
-    assert_eq!(ABI_VERSION, 1);
+    assert_eq!(ABI_VERSION, 2);
     assert_eq!(mozc.mozc_version().split('.').count(), 4);
 
     let segments = mozc.convert("きょうはさむいですね", &[], "");
@@ -83,8 +83,20 @@ fn converts_and_predicts() {
     assert!(segments[1].candidates.iter().any(|c| c == "履物を"));
 
     assert!(mozc.convert("ここではきものをぬぐ", &[3, 3], "").is_empty());
+    assert!(mozc.last_error().contains("do not add up"));
     assert!(mozc.convert("", &[], "").is_empty());
+    assert!(mozc.last_error().contains("empty"));
     assert!(mozc.convert("nul\0inside", &[], "").is_empty());
+    assert!(mozc.last_error().contains("NUL"));
+    assert!(!mozc.learn("かんじ", &[3], &["not a candidate"], ""));
+    assert!(mozc.last_error().contains("not a candidate"));
+    assert!(!mozc.convert("かんじ", &[], "").is_empty());
+    assert_eq!(mozc.last_error(), "");
+
+    let kanji = &mozc.convert("かんじ", &[3], "")[0];
+    assert_eq!(kanji.descriptions.len(), kanji.candidates.len());
+    let katakana = kanji.candidates.iter().position(|c| c == "カンジ").unwrap();
+    assert_eq!(kanji.descriptions[katakana], "カタカナ");
 
     let candidates = &mozc.convert("かんじ", &[3], "")[0].candidates;
     let mut unique = candidates.clone();
