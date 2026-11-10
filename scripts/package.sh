@@ -10,13 +10,14 @@
 #   SHA256SUMS                           of the two archives
 #   python/  a wheel per platform, the library inside
 #   nuget/   MozcFfi, with both platforms' libraries
-#   npm/     mozc-ffi, @mozc-ffi/linux-x64, @mozc-ffi/win32-x64
+#   npm/     mozc-ffi, @mozc-ffi/linux-x64, @mozc-ffi/win32-x64, and the Unity package
+#            com.malorn44.mozc-ffi (Unity reads npm as a scoped registry)
 # Each one also holds LICENSE and THIRD_PARTY_NOTICES.md. VERSION must be the version in every
 # package file (release-please keeps them equal). Needs python3, dotnet and npm.
 set -euo pipefail
 
 if [ $# -ne 4 ]; then
-    sed -n '2,15p' "$0" >&2
+    sed -n '2,16p' "$0" >&2
     exit 2
 fi
 version=$1 linux=$(cd -- "$2" && pwd) windows=$(cd -- "$3" && pwd) out=$4
@@ -34,6 +35,7 @@ declare -A versions=(
     [bindings/python/pyproject.toml]=$(sed -n 's/^version = "\(.*\)"$/\1/p' "$root/bindings/python/pyproject.toml")
     [bindings/rust/Cargo.toml]=$(sed -n 's/^version = "\(.*\)"$/\1/p' "$root/bindings/rust/Cargo.toml")
     [bindings/node/package.json]=$(node -p "require('$root/bindings/node/package.json').version")
+    [bindings/unity/package.json]=$(node -p "require('$root/bindings/unity/package.json').version")
     [bindings/csharp/MozcFfi.csproj]=$(sed -n 's:.*<Version>\(.*\)</Version>.*:\1:p' "$root/bindings/csharp/MozcFfi.csproj")
 )
 for file in "${!versions[@]}"; do
@@ -139,5 +141,23 @@ fs.writeFileSync(dir + "/package.json", JSON.stringify({
 }, null, 2) + "\n");' "$dir" "$version" "$os" "$cpu" "$(basename "$library")"
     npm pack --silent --pack-destination "$out/npm" "$dir" > /dev/null
 done
+
+# --- Unity: the C# bindings and both libraries, as a Unity package on npm --------------------------
+
+# bindings/unity holds the package's own files and a .meta for every file in it, the ones added
+# here included: Unity can't write them into an installed package, and they hold the plugins'
+# platform settings.
+dir=$stage/unity
+cp -r "$root/bindings/unity" "$dir"
+cp "$root/bindings/csharp/MozcFfi.cs" "$dir/Runtime/"
+cp "$root/README.md" "$root/THIRD_PARTY_NOTICES.md" "$dir/"
+cp "$root/LICENSE" "$dir/LICENSE.md"
+cp "$linux/libmozc_ffi.so" "$windows/mozc_ffi.dll" "$dir/Runtime/Plugins/x86_64/"
+missing=$(cd "$dir" && find . -mindepth 1 ! -name '*.meta' ! -exec test -e '{}.meta' ';' -print)
+if [ -n "$missing" ]; then
+    echo "the Unity package has no .meta for: $missing" >&2
+    exit 1
+fi
+npm pack --silent --pack-destination "$out/npm" "$dir" > /dev/null
 
 (cd "$out" && find . -type f | LC_ALL=C sort)
