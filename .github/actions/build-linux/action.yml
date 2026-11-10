@@ -10,9 +10,7 @@ inputs:
 runs:
   using: composite
   steps:
-    # Pull requests restore main's cache and save none of their own: a cache saved on a pull
-    # request's branch is readable only there, and a few of them would push main's out of the
-    # repository's 10 GB.
+    # Only main saves the cache: one saved by a pull request is readable only there.
     - id: cache
       uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
