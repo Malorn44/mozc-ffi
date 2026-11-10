@@ -16,9 +16,25 @@ Google 製のオープンソース日本語かな漢字変換エンジン [Mozc]
 | `scripts/` | ビルドスクリプト、`check.sh`（すべての lint とテスト）、固定した Mozc のコミット（`MOZC_COMMIT`） |
 | `tests/` | すべてのテストで使う日常的なチャットの文例 `chat.tsv` と、API を使う C プログラム `smoke.c` |
 
+## インストール
+
+どのパッケージにもビルド済みのライブラリが入っています。対応環境は Linux x64（glibc 2.28 以降）と Windows x64 です。
+
+| | インストール | 必要なもの |
+|---|---|---|
+| Python | `pip install mozc-ffi` | Python 3.11 以降 |
+| C# | `dotnet add package MozcFfi` | .NET Standard 2.0 |
+| Node.js | `npm install mozc-ffi` | Node.js 22 以降 |
+| Rust | `cargo add mozc-ffi` | Rust 1.88 以降と、ライブラリ（下記） |
+| C | [Releases](https://github.com/Malorn44/mozc-ffi/releases) のアーカイブ | |
+
+Rust のクレートに入っているのはバインディングだけです。ライブラリが crates.io の上限より大きいためです。[Releases](https://github.com/Malorn44/mozc-ffi/releases) から使用する環境のアーカイブをダウンロードし、`libmozc_ffi.so` または `mozc_ffi.dll` を実行ファイルと同じ場所に置くか、`MOZC_FFI_LIBRARY` にそのパスを設定してください。
+
+アーカイブには、ヘッダー、ライブラリ、そして Windows 用にはインポートライブラリが入っています。チェックサムは `SHA256SUMS` にあります。
+
 ## ビルド
 
-どちらのスクリプトも、`scripts/MOZC_COMMIT` に書かれたコミットの Mozc を `build/mozc` に取得し、そのソースツリーの中で `core/` をビルドします。初回は Mozc の依存関係をダウンロードするため時間がかかります。ビルドしたものはすべて `build/` に入るので、このディレクトリを消せば完全なクリーンになります。
+ライブラリを自分でビルドする場合の手順です。どちらのスクリプトも、`scripts/MOZC_COMMIT` に書かれたコミットの Mozc を `build/mozc` に取得し、そのソースツリーの中で `core/` をビルドします。初回は Mozc の依存関係をダウンロードするため時間がかかります。ビルドしたものはすべて `build/` に入るので、このディレクトリを消せば完全なクリーンになります。
 
 Linux では [Bazelisk](https://github.com/bazelbuild/bazelisk)、Git、GCC が必要です。
 
