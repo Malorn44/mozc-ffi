@@ -4,7 +4,7 @@
     <TargetFramework>netstandard2.0</TargetFramework>
     <LangVersion>9.0</LangVersion>
     <RootNamespace>MozcFfi</RootNamespace>
-    <Version>0.1.1</Version>
+    <Version>0.2.0</Version>
     <Description>Unofficial C# bindings for Google's Mozc kana-kanji converter, in process.</Description>
     <PackageLicenseExpression>BSD-3-Clause</PackageLicenseExpression>
     <Authors>Mara Schwartz</Authors>
