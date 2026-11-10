@@ -18,18 +18,22 @@ use std::fmt;
 use std::mem::ManuallyDrop;
 use std::path::{Path, PathBuf};
 use std::ptr;
+use std::sync::Mutex;
 
 use libloading::Library;
 
 /// The C API version these bindings speak.
-pub const ABI_VERSION: i32 = 1;
+pub const ABI_VERSION: i32 = 2;
 const INCOGNITO: i32 = 1;
+const BAD_ARGUMENT: &str = "a string contains NUL, or a length is too large";
 
 /// A segment of the reading and its candidates, best first.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Segment {
     pub reading: String,
     pub candidates: Vec<String>,
+    /// Mozc's note on each candidate (its script, an emoji's name), in Japanese; "" if none.
+    pub descriptions: Vec<String>,
 }
 
 #[derive(Debug)]
@@ -40,8 +44,8 @@ pub enum Error {
     Abi { found: i32 },
     /// The profile path is not valid UTF-8 or contains NUL.
     Path,
-    /// Mozc could not start.
-    Open,
+    /// Mozc could not start, and why.
+    Open(String),
 }
 
 impl fmt::Display for Error {
@@ -53,7 +57,7 @@ impl fmt::Display for Error {
                 "mozc_ffi has ABI {found}, these bindings need {ABI_VERSION}"
             ),
             Error::Path => write!(f, "the profile path must be UTF-8 without NUL"),
-            Error::Open => write!(f, "mozc_ffi_open failed"),
+            Error::Open(why) => write!(f, "mozc_ffi_open failed: {why}"),
         }
     }
 }
@@ -66,6 +70,7 @@ type Result = *mut c_void;
 /// The C functions, kept with the library that holds them.
 struct Api {
     mozc_version: unsafe extern "C" fn() -> *const c_char,
+    last_error: unsafe extern "C" fn() -> *const c_char,
     open: unsafe extern "C" fn(*const c_char, i32) -> Handle,
     close: unsafe extern "C" fn(Handle),
     convert: unsafe extern "C" fn(Handle, *const c_char, *const i32, i32, *const c_char) -> Result,
@@ -74,6 +79,7 @@ struct Api {
     segment_reading: unsafe extern "C" fn(Result, i32) -> *const c_char,
     candidate_count: unsafe extern "C" fn(Result, i32) -> i32,
     candidate: unsafe extern "C" fn(Result, i32, i32) -> *const c_char,
+    candidate_description: unsafe extern "C" fn(Result, i32, i32) -> *const c_char,
     result_free: unsafe extern "C" fn(Result),
     learn: unsafe extern "C" fn(
         Handle,
@@ -109,6 +115,7 @@ impl Api {
             }
             Ok(Api {
                 mozc_version: symbol!(b"mozc_ffi_mozc_version\0"),
+                last_error: symbol!(b"mozc_ffi_last_error\0"),
                 open: symbol!(b"mozc_ffi_open\0"),
                 close: symbol!(b"mozc_ffi_close\0"),
                 convert: symbol!(b"mozc_ffi_convert\0"),
@@ -117,6 +124,7 @@ impl Api {
                 segment_reading: symbol!(b"mozc_ffi_segment_reading\0"),
                 candidate_count: symbol!(b"mozc_ffi_candidate_count\0"),
                 candidate: symbol!(b"mozc_ffi_candidate\0"),
+                candidate_description: symbol!(b"mozc_ffi_candidate_description\0"),
                 result_free: symbol!(b"mozc_ffi_result_free\0"),
                 learn: symbol!(b"mozc_ffi_learn\0"),
                 clear_learning: symbol!(b"mozc_ffi_clear_learning\0"),
@@ -131,6 +139,7 @@ impl Api {
 pub struct Mozc {
     api: Api,
     handle: Handle,
+    error: Mutex<String>,
 }
 
 // SAFETY: mozc_ffi serializes the calls on one handle.
@@ -164,15 +173,26 @@ impl Mozc {
         let handle =
             unsafe { (api.open)(profile.as_ref().map_or(ptr::null(), |p| p.as_ptr()), flags) };
         if handle.is_null() {
-            return Err(Error::Open);
+            // SAFETY: a static NUL-terminated string.
+            return Err(Error::Open(unsafe { text((api.last_error)()) }));
         }
-        Ok(Mozc { api, handle })
+        Ok(Mozc {
+            api,
+            handle,
+            error: Mutex::new(String::new()),
+        })
     }
 
     /// Mozc's version, such as "2.32.5994.102".
     pub fn mozc_version(&self) -> String {
         // SAFETY: a static NUL-terminated string.
         unsafe { text((self.api.mozc_version)()) }
+    }
+
+    /// Why the last `convert`, `predict`, `learn`, `clear_learning` or `flush` on this `Mozc`
+    /// failed; empty if it succeeded.
+    pub fn last_error(&self) -> String {
+        self.error.lock().unwrap_or_else(|e| e.into_inner()).clone()
     }
 
     /// Segments of `reading` with candidates, best first. `lengths` (one per segment, in
@@ -184,7 +204,7 @@ impl Mozc {
             CString::new(context),
             to_i32(lengths),
         ) else {
-            return Vec::new();
+            return self.fail(BAD_ARGUMENT, Vec::new());
         };
         // SAFETY: every pointer outlives the call; lengths has `lengths.len()` entries.
         let result = unsafe {
@@ -196,16 +216,18 @@ impl Mozc {
                 context.as_ptr(),
             )
         };
+        self.note();
         self.read(result)
     }
 
     /// Completions of `reading` typed so far.
     pub fn predict(&self, reading: &str, context: &str) -> Vec<String> {
         let (Ok(reading), Ok(context)) = (CString::new(reading), CString::new(context)) else {
-            return Vec::new();
+            return self.fail(BAD_ARGUMENT, Vec::new());
         };
         // SAFETY: both strings outlive the call.
         let result = unsafe { (self.api.predict)(self.handle, reading.as_ptr(), context.as_ptr()) };
+        self.note();
         self.read(result)
             .into_iter()
             .next()
@@ -216,25 +238,28 @@ impl Mozc {
     /// rank first next time. False, and nothing learned, if a text isn't a candidate.
     pub fn learn(&self, reading: &str, lengths: &[usize], texts: &[&str], context: &str) -> bool {
         if lengths.is_empty() || lengths.len() != texts.len() {
-            return false;
+            return self.fail(
+                "lengths and texts must be the same length, and not empty",
+                false,
+            );
         }
         let (Ok(reading), Ok(context), Some(lengths)) = (
             CString::new(reading),
             CString::new(context),
             to_i32(lengths),
         ) else {
-            return false;
+            return self.fail(BAD_ARGUMENT, false);
         };
         let Ok(texts) = texts
             .iter()
             .map(|t| CString::new(*t))
             .collect::<std::result::Result<Vec<_>, _>>()
         else {
-            return false;
+            return self.fail(BAD_ARGUMENT, false);
         };
         let pointers: Vec<*const c_char> = texts.iter().map(|t| t.as_ptr()).collect();
         // SAFETY: every pointer outlives the call; the arrays have `pointers.len()` entries.
-        unsafe {
+        let status = unsafe {
             (self.api.learn)(
                 self.handle,
                 reading.as_ptr(),
@@ -242,20 +267,38 @@ impl Mozc {
                 pointers.as_ptr(),
                 pointers.len() as i32,
                 context.as_ptr(),
-            ) == 1
-        }
+            )
+        };
+        self.note();
+        status == 1
     }
 
     /// Forgets everything learned.
     pub fn clear_learning(&self) -> bool {
         // SAFETY: the handle is open until drop.
-        unsafe { (self.api.clear_learning)(self.handle) == 1 }
+        let status = unsafe { (self.api.clear_learning)(self.handle) };
+        self.note();
+        status == 1
     }
 
     /// Writes what was learned to the profile.
     pub fn flush(&self) -> bool {
         // SAFETY: the handle is open until drop.
-        unsafe { (self.api.flush)(self.handle) == 1 }
+        let status = unsafe { (self.api.flush)(self.handle) };
+        self.note();
+        status == 1
+    }
+
+    /// Keeps the library's reason for the call just made on this thread.
+    fn note(&self) {
+        // SAFETY: a static NUL-terminated string.
+        let why = unsafe { text((self.api.last_error)()) };
+        *self.error.lock().unwrap_or_else(|e| e.into_inner()) = why;
+    }
+
+    fn fail<T>(&self, why: &str, value: T) -> T {
+        *self.error.lock().unwrap_or_else(|e| e.into_inner()) = why.to_owned();
+        value
     }
 
     fn read(&self, result: Result) -> Vec<Segment> {
@@ -270,6 +313,9 @@ impl Mozc {
                     reading: text((api.segment_reading)(result, s)),
                     candidates: (0..(api.candidate_count)(result, s))
                         .map(|c| text((api.candidate)(result, s, c)))
+                        .collect(),
+                    descriptions: (0..(api.candidate_count)(result, s))
+                        .map(|c| text((api.candidate_description)(result, s, c)))
                         .collect(),
                 })
                 .collect();
