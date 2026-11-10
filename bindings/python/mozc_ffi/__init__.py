@@ -18,7 +18,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional, Sequence
 
-ABI_VERSION = 1
+ABI_VERSION = 2
 _INCOGNITO = 1
 
 
@@ -46,6 +46,7 @@ def _load(path: str) -> ctypes.CDLL:
     signatures = {
         "mozc_ffi_abi_version": ([], i32),
         "mozc_ffi_mozc_version": ([], text),
+        "mozc_ffi_last_error": ([], text),
         "mozc_ffi_open": ([text, i32], handle),
         "mozc_ffi_close": ([handle], None),
         "mozc_ffi_convert": ([handle, text, ctypes.POINTER(i32), i32, text], result),
@@ -84,13 +85,19 @@ class Mozc:
     ) -> None:
         self._lib = _load(library or _library_path())
         profile = None if profile_dir is None else os.fspath(profile_dir)
+        self._error = ""
         self._handle = self._lib.mozc_ffi_open(_utf8(profile), _INCOGNITO if incognito else 0)
         if not self._handle:
-            raise MozcError("mozc_ffi_open failed")
+            raise MozcError(f"mozc_ffi_open failed: {self._reason()}")
 
     @property
     def mozc_version(self) -> str:
         return self._lib.mozc_ffi_mozc_version().decode("utf-8")
+
+    @property
+    def last_error(self) -> str:
+        """Why the last convert, predict, learn, clear_learning or flush failed; "" if it succeeded."""
+        return self._error
 
     def convert(self, reading: str, lengths: Optional[Sequence[int]] = None, context: str = "") -> list[Segment]:
         """Segments of `reading` with candidates, best first; [] if it can't be converted as asked."""
@@ -98,30 +105,33 @@ class Mozc:
         result = self._lib.mozc_ffi_convert(
             self._open(), _utf8(reading), _lengths(lengths), len(lengths), _utf8(context)
         )
+        self._error = self._reason()
         return self._read(result)
 
     def predict(self, reading: str, context: str = "") -> list[str]:
         """Completions of `reading` typed so far."""
-        segments = self._read(self._lib.mozc_ffi_predict(self._open(), _utf8(reading), _utf8(context)))
+        result = self._lib.mozc_ffi_predict(self._open(), _utf8(reading), _utf8(context))
+        self._error = self._reason()
+        segments = self._read(result)
         return segments[0].candidates if segments else []
 
     def learn(self, reading: str, lengths: Sequence[int], texts: Sequence[str], context: str = "") -> bool:
         """Learns the picked `texts`, one per segment of `lengths`; False (nothing learned) on a mismatch."""
         if len(lengths) != len(texts):
+            self._error = "lengths and texts differ in length"
             return False
         encoded = (ctypes.c_char_p * len(texts))(*(_utf8(t) for t in texts))
-        return (
+        return self._ok(
             self._lib.mozc_ffi_learn(
                 self._open(), _utf8(reading), _lengths(lengths), encoded, len(texts), _utf8(context)
             )
-            == 1
         )
 
     def clear_learning(self) -> bool:
-        return self._lib.mozc_ffi_clear_learning(self._open()) == 1
+        return self._ok(self._lib.mozc_ffi_clear_learning(self._open()))
 
     def flush(self) -> bool:
-        return self._lib.mozc_ffi_flush(self._open()) == 1
+        return self._ok(self._lib.mozc_ffi_flush(self._open()))
 
     def close(self) -> None:
         if self._handle:
@@ -142,6 +152,13 @@ class Mozc:
         if not self._handle:
             raise MozcError("closed")
         return self._handle
+
+    def _reason(self) -> str:
+        return self._lib.mozc_ffi_last_error().decode("utf-8")
+
+    def _ok(self, status: int) -> bool:
+        self._error = self._reason()
+        return status == 1
 
     def _read(self, result) -> list[Segment]:
         if not result:

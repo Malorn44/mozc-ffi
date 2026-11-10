@@ -15,6 +15,8 @@ export class Mozc {
   constructor(profileDir?: string | null, options?: { incognito?: boolean });
   /** Mozc's version, such as "2.32.5994.102". */
   static readonly mozcVersion: string;
+  /** Why the last convert, predict, learn, clearLearning or flush failed; '' if it succeeded. */
+  readonly lastError: string;
   /** Segments of the reading; lengths (in characters) fix the segments; context is the text before it. */
   convert(reading: string, lengths?: number[] | null, context?: string): Segment[];
   /** Completions of the reading typed so far. */

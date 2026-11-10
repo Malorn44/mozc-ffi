@@ -14,7 +14,7 @@
 const koffi = require('koffi');
 const path = require('node:path');
 
-const ABI_VERSION = 1;
+const ABI_VERSION = 2;
 const INCOGNITO = 1;
 
 function libraryPath() {
@@ -41,6 +41,7 @@ function load() {
   const f = (signature) => lib.func(signature);
   api = {
     mozcVersion: f('const char *mozc_ffi_mozc_version()'),
+    lastError: f('const char *mozc_ffi_last_error()'),
     open: f('mozc_ffi *mozc_ffi_open(const char *profile_dir, int32_t flags)'),
     close: f('void mozc_ffi_close(mozc_ffi *mozc)'),
     convert: f('mozc_ffi_result *mozc_ffi_convert(mozc_ffi *mozc, const char *reading, const int32_t *lengths, int32_t n, const char *context)'),
@@ -71,8 +72,9 @@ class Mozc {
    */
   constructor(profileDir = null, { incognito = false } = {}) {
     this._api = load();
+    this._error = '';
     this._handle = this._api.open(profileDir, incognito ? INCOGNITO : 0);
-    if (!this._handle) throw new Error('mozc_ffi_open failed');
+    if (!this._handle) throw new Error(`mozc_ffi_open failed: ${this._api.lastError()}`);
   }
 
   /** Mozc's version, such as "2.32.5994.102". */
@@ -80,34 +82,46 @@ class Mozc {
     return load().mozcVersion();
   }
 
+  /** Why the last convert, predict, learn, clearLearning or flush failed; '' if it succeeded. */
+  get lastError() {
+    return this._error;
+  }
+
   /** Segments of the reading, best candidate first; [] if it can't be converted as asked. */
   convert(reading, lengths = null, context = '') {
     const sizes = lengthsArray(lengths);
-    if (sizes === undefined) return [];
-    return this._read(this._api.convert(this._open(), reading, sizes, sizes ? sizes.length : 0, context));
+    if (sizes === undefined) return this._fail('a segment length is not a positive integer', []);
+    const result = this._api.convert(this._open(), reading, sizes, sizes ? sizes.length : 0, context);
+    this._error = this._api.lastError();
+    return this._read(result);
   }
 
   /** Completions of the reading typed so far. */
   predict(reading, context = '') {
-    const segments = this._read(this._api.predict(this._open(), reading, context));
+    const result = this._api.predict(this._open(), reading, context);
+    this._error = this._api.lastError();
+    const segments = this._read(result);
     return segments.length > 0 ? segments[0].candidates : [];
   }
 
   /** Learns the picked texts, one per segment of lengths; false (nothing learned) on a mismatch. */
   learn(reading, lengths, texts, context = '') {
     const sizes = lengthsArray(lengths);
-    if (!sizes || !Array.isArray(texts) || texts.length !== sizes.length) return false;
-    return this._api.learn(this._open(), reading, sizes, texts, texts.length, context) === 1;
+    if (!sizes) return this._fail('lengths must be positive integers, one per segment', false);
+    if (!Array.isArray(texts) || texts.length !== sizes.length) {
+      return this._fail('lengths and texts differ in length', false);
+    }
+    return this._ok(this._api.learn(this._open(), reading, sizes, texts, texts.length, context));
   }
 
   /** Forgets everything learned. */
   clearLearning() {
-    return this._api.clearLearning(this._open()) === 1;
+    return this._ok(this._api.clearLearning(this._open()));
   }
 
   /** Writes what was learned to the profile. */
   flush() {
-    return this._api.flush(this._open()) === 1;
+    return this._ok(this._api.flush(this._open()));
   }
 
   /** Saves what was learned and frees the engine. Safe to call twice. */
@@ -125,6 +139,16 @@ class Mozc {
   _open() {
     if (!this._handle) throw new Error('Mozc is closed');
     return this._handle;
+  }
+
+  _fail(why, value) {
+    this._error = why;
+    return value;
+  }
+
+  _ok(status) {
+    this._error = this._api.lastError();
+    return status === 1;
   }
 
   _read(result) {
