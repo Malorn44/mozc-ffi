@@ -62,22 +62,26 @@ npm and crates.io can only trust a workflow for a package that already exists, s
 first version goes up by hand. Their publish jobs run only while the repository variables
 `NPM_TRUSTED` and `CRATES_TRUSTED` are `true`.
 
-When a release adds an npm package (a new platform, say):
+When a release adds an npm package (a new platform, say), reserve its name with a placeholder, so
+the release's own publish is the first through the trusted publisher. npm asks for a new trusted
+publisher to be used within two days, so do this shortly before merging the release PR:
 
-1. Let the release run reach the approval step, but don't approve yet.
-2. Publish the new package from what the run built:
+1. Publish an empty `0.0.0` under the new name:
    ```sh
-   gh run download <run id> -R Malorn44/mozc-ffi -n release-packages -D /tmp/mozc-ffi-packages
-   cd /tmp/mozc-ffi-packages/npm
    npm login
-   npm publish mozc-ffi-<platform>-X.Y.Z.tgz --access public
+   dir=$(mktemp -d)
+   printf '{"name":"%s","version":"0.0.0","description":"Placeholder; the first real version follows.","license":"BSD-3-Clause"}\n' \
+     "<new package name>" > "$dir/package.json"
+   npm publish "$dir" --access public
    ```
-3. On npmjs.com, add the trusted publisher to the new package (allow publish only) and set its
+2. On npmjs.com, add the trusted publisher to the new package (allow publish only) and set its
    publishing access to "Require two-factor authentication and disallow tokens".
-4. Approve the deployment. The job skips the version already there and publishes the rest.
-
-npm asks for a new trusted publisher to be used within two days, so add it just before a release
-rather than ahead of time.
+3. Merge the release PR and approve the deployment. `publish-npm` publishes the release's version
+   of every package, the new one included.
+4. Remove the placeholder (npm allows this for 72 hours), so it isn't offered as a version:
+   ```sh
+   npm unpublish "<new package name>@0.0.0"
+   ```
 
 For crates.io, the first version of the crate was published the same way: `cargo publish` from the
 tag's `bindings/rust`, with a short-lived token, and then the trusted publisher added.
