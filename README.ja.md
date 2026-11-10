@@ -27,10 +27,16 @@ Google 製のオープンソース日本語かな漢字変換エンジン [Mozc]
 | C# | `dotnet add package MozcFfi` | .NET Standard 2.0 |
 | Unity | `com.malorn44.mozc-ffi` パッケージ（下記） | Unity 2021.3 以降、Windows または Linux の x64 |
 | Node.js | `npm install mozc-ffi` | Node.js 22 以降 |
-| Rust | `cargo add mozc-ffi` | Rust 1.88 以降と、ライブラリ（下記） |
+| Rust | `cargo add mozc-ffi --features download` | Rust 1.88 以降 |
 | C | [Releases](https://github.com/Malorn44/mozc-ffi/releases) のアーカイブ | |
 
-Rust のクレートに入っているのはバインディングだけです。ライブラリが crates.io の上限より大きいためです。[Releases](https://github.com/Malorn44/mozc-ffi/releases) から使用する環境のアーカイブをダウンロードし、`libmozc_ffi.so` または `mozc_ffi.dll` を実行ファイルと同じ場所に置くか、`MOZC_FFI_LIBRARY` にそのパスを設定してください。
+Rust のクレートに入っているのはバインディングだけです。ライブラリが crates.io の上限より大きいためです。`download` フィーチャーを有効にすると、ビルド時にそのバージョンのリリースからライブラリを取得し、SHA-256 を検証します（`curl` と `tar` が必要です）。
+
+```sh
+cargo add mozc-ffi --features download
+```
+
+プログラムを配布するときは、ライブラリ（`mozc_ffi::DOWNLOADED_LIBRARY`）を実行ファイルと同じ場所にコピーしてください。フィーチャーを使わない場合は、[Releases](https://github.com/Malorn44/mozc-ffi/releases) から使用する環境のアーカイブをダウンロードし、`libmozc_ffi.so` または `mozc_ffi.dll` を実行ファイルと同じ場所に置くか、`MOZC_FFI_LIBRARY` にそのパスを設定してください。
 
 Unity では、プロジェクトの `Packages/manifest.json` に、npm をスコープ付きレジストリとして追加し、パッケージを依存関係に加えてください（既存の内容はそのまま残します）。パッケージには C# バインディングとライブラリが入っており、新しいバージョンは Package Manager に表示されます。
 
