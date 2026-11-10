@@ -93,6 +93,14 @@ For crates.io, the crate's first version was published by hand: `cargo publish` 
   The newer commit's run does the release instead.
 - **"release-please tagged … which is not on main".** The tag points somewhere unexpected; nothing
   was built. Look at the tag and the draft release before doing anything else.
+- **The crate didn't publish, and the run can no longer re-run that job** (for example after
+  "Re-run all jobs", which skips the release jobs once the tag exists). In Actions, open **ci**, choose
+  **Run workflow** on `main` with `crate_tag` set to the tag (`vX.Y.Z`), and approve the `release`
+  deployment. It publishes only that tag's crate. If the release is still a draft afterwards, make it
+  public:
+  ```sh
+  gh release edit vX.Y.Z -R Malorn44/mozc-ffi --draft=false --latest
+  ```
 - **A build, `release-assets` or a publish job failed.** Fix the cause on a branch if needed, then use
   "Re-run failed jobs" on the run. The tag and draft stay as they are, and each publish job skips a
   version its registry already has.
