@@ -30,7 +30,7 @@ function reachable(target, segments) {
 test('converts and predicts', () => {
   const mozc = new Mozc(profile, { incognito: true });
   try {
-    assert.equal(ABI_VERSION, 1);
+    assert.equal(ABI_VERSION, 2);
     assert.match(Mozc.mozcVersion, /^\d+\.\d+\.\d+\.\d+$/);
 
     let segments = mozc.convert('きょうはさむいですね');
@@ -42,8 +42,15 @@ test('converts and predicts', () => {
     assert.ok(segments[1].candidates.includes('履物を'));
 
     assert.deepEqual(mozc.convert('ここではきものをぬぐ', [3, 3]), []);
+    assert.match(mozc.lastError, /do not add up/);
     assert.deepEqual(mozc.convert('ここではきものをぬぐ', [3, -1, 8]), []);
+    assert.match(mozc.lastError, /positive integer/);
     assert.deepEqual(mozc.convert(''), []);
+    assert.match(mozc.lastError, /empty/);
+    assert.equal(mozc.learn('かんじ', [3], ['not a candidate']), false);
+    assert.match(mozc.lastError, /not a candidate/);
+    assert.ok(mozc.convert('かんじ').length > 0);
+    assert.equal(mozc.lastError, '');
 
     const candidates = mozc.convert('かんじ', [3])[0].candidates;
     assert.equal(new Set(candidates).size, candidates.length);

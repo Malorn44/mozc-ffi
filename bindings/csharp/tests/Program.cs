@@ -39,6 +39,8 @@ static class Program
                       "lengths fix the segments");
                 Check(segments.Count == 3 && segments[1].Candidates.Contains("履物を"), "履物を is a candidate");
                 Check(mozc.Convert("ここではきものをぬぐ", new[] { 3, 3 }).Count == 0, "bad lengths give nothing");
+                Check(mozc.LastError.Contains("do not add up"), $"and say why: {mozc.LastError}");
+                Check(mozc.Convert("かんじ").Count > 0 && mozc.LastError == "", "a success clears the error");
 
                 var predictions = mozc.Predict("ありがと");
                 Check(predictions.Any(p => p.StartsWith("ありがとう", StringComparison.Ordinal)), "predict completes");
@@ -65,6 +67,7 @@ static class Program
                 Check(mozc.Learn("かんじ", new[] { 3 }, new[] { pick }), "learn accepts a candidate");
                 Check(mozc.Convert("かんじ", new[] { 3 })[0].Candidates[0] == pick, "the pick ranks first");
                 Check(!mozc.Learn("かんじ", new[] { 3 }, new[] { "not a candidate" }), "learn refuses a non-candidate");
+                Check(mozc.LastError.Contains("not a candidate"), $"and says why: {mozc.LastError}");
                 Check(mozc.Flush(), "flush");
             }
             using (var mozc = new Mozc(profile))
