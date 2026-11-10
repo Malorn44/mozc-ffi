@@ -78,6 +78,10 @@ MOZC_FFI_API int32_t mozc_ffi_candidate_count(const mozc_ffi_result* result,
                                               int32_t segment);
 MOZC_FFI_API const char* mozc_ffi_candidate(const mozc_ffi_result* result,
                                             int32_t segment, int32_t index);
+/* Mozc's note on a candidate, such as its script or which homophone it is,
+ * in Japanese; "" if it has none. */
+MOZC_FFI_API const char* mozc_ffi_candidate_description(
+    const mozc_ffi_result* result, int32_t segment, int32_t index);
 MOZC_FFI_API void mozc_ffi_result_free(mozc_ffi_result* result);
 
 /* Learns a conversion the user sent: the reading cut into n segments of

@@ -52,6 +52,11 @@ test('converts and predicts', () => {
     assert.ok(mozc.convert('かんじ').length > 0);
     assert.equal(mozc.lastError, '');
 
+    const kanji = mozc.convert('かんじ', [3])[0];
+    assert.equal(kanji.descriptions.length, kanji.candidates.length);
+    assert.equal(kanji.descriptions[kanji.candidates.indexOf('カンジ')], 'カタカナ');
+    assert.equal(kanji.descriptions[kanji.candidates.indexOf('漢字')], '');
+
     const candidates = mozc.convert('かんじ', [3])[0].candidates;
     assert.equal(new Set(candidates).size, candidates.length);
 

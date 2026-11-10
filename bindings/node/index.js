@@ -50,6 +50,7 @@ function load() {
     segmentReading: f('const char *mozc_ffi_segment_reading(const mozc_ffi_result *result, int32_t segment)'),
     candidateCount: f('int32_t mozc_ffi_candidate_count(const mozc_ffi_result *result, int32_t segment)'),
     candidate: f('const char *mozc_ffi_candidate(const mozc_ffi_result *result, int32_t segment, int32_t index)'),
+    description: f('const char *mozc_ffi_candidate_description(const mozc_ffi_result *result, int32_t segment, int32_t index)'),
     resultFree: f('void mozc_ffi_result_free(mozc_ffi_result *result)'),
     learn: f('int32_t mozc_ffi_learn(mozc_ffi *mozc, const char *reading, const int32_t *lengths, const char **texts, int32_t n, const char *context)'),
     clearLearning: f('int32_t mozc_ffi_clear_learning(mozc_ffi *mozc)'),
@@ -158,8 +159,12 @@ class Mozc {
       const segments = [];
       for (let s = 0; s < a.segmentCount(result); s++) {
         const candidates = [];
-        for (let c = 0; c < a.candidateCount(result, s); c++) candidates.push(a.candidate(result, s, c));
-        segments.push({ reading: a.segmentReading(result, s), candidates });
+        const descriptions = [];
+        for (let c = 0; c < a.candidateCount(result, s); c++) {
+          candidates.push(a.candidate(result, s, c));
+          descriptions.push(a.description(result, s, c));
+        }
+        segments.push({ reading: a.segmentReading(result, s), candidates, descriptions });
       }
       return segments;
     } finally {

@@ -68,6 +68,13 @@ class ConvertTest(unittest.TestCase):
         candidates = self.mozc.convert("かんじ", [3])[0].candidates
         self.assertEqual(len(candidates), len(set(candidates)), candidates)
 
+    def test_candidates_have_descriptions(self) -> None:
+        segment = self.mozc.convert("かんじ", [3])[0]
+        self.assertEqual(len(segment.descriptions), len(segment.candidates))
+        described = dict(zip(segment.candidates, segment.descriptions, strict=True))
+        self.assertEqual(described["カンジ"], "カタカナ")
+        self.assertEqual(described["漢字"], "")
+
     def test_lengths_fix_the_segments(self) -> None:
         segments = self.mozc.convert("ここではきものをぬぐ", [3, 5, 2])
         self.assertEqual([s.reading for s in segments], ["ここで", "はきものを", "ぬぐ"])
