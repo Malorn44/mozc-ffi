@@ -25,10 +25,16 @@ Google 製のオープンソース日本語かな漢字変換エンジン [Mozc]
 | Python | `pip install mozc-ffi` | Python 3.11 以降 |
 | C# | `dotnet add package MozcFfi` | .NET Standard 2.0 |
 | Node.js | `npm install mozc-ffi` | Node.js 22 以降 |
-| Rust | `cargo add mozc-ffi` | Rust 1.88 以降と、ライブラリ（下記） |
+| Rust | `cargo add mozc-ffi --features download` | Rust 1.88 以降 |
 | C | [Releases](https://github.com/Malorn44/mozc-ffi/releases) のアーカイブ | |
 
-Rust のクレートに入っているのはバインディングだけです。ライブラリが crates.io の上限より大きいためです。[Releases](https://github.com/Malorn44/mozc-ffi/releases) から使用する環境のアーカイブをダウンロードし、`libmozc_ffi.so` または `mozc_ffi.dll` を実行ファイルと同じ場所に置くか、`MOZC_FFI_LIBRARY` にそのパスを設定してください。
+Rust のクレートに入っているのはバインディングだけです。ライブラリが crates.io の上限より大きいためです。`download` フィーチャーを有効にすると、ビルド時にそのバージョンのリリースからライブラリを取得し、SHA-256 を検証します（`curl` と `tar` が必要です）。
+
+```sh
+cargo add mozc-ffi --features download
+```
+
+プログラムを配布するときは、ライブラリ（`mozc_ffi::DOWNLOADED_LIBRARY`）を実行ファイルと同じ場所にコピーしてください。フィーチャーを使わない場合は、[Releases](https://github.com/Malorn44/mozc-ffi/releases) から使用する環境のアーカイブをダウンロードし、`libmozc_ffi.so` または `mozc_ffi.dll` を実行ファイルと同じ場所に置くか、`MOZC_FFI_LIBRARY` にそのパスを設定してください。
 
 アーカイブには、ヘッダー、ライブラリ、そして Windows 用にはインポートライブラリが入っています。チェックサムは `SHA256SUMS` にあります。
 
