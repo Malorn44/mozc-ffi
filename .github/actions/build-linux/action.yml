@@ -16,9 +16,7 @@ runs:
       with:
         path: build/bazel-cache
         key: bazel-linux-${{ runner.arch }}-${{ hashFiles('scripts/MOZC_COMMIT', 'scripts/build.sh', 'core/**') }}
-        restore-keys: |
-          bazel-linux-${{ runner.arch }}-
-          bazel-linux-${{ hashFiles('scripts/MOZC_COMMIT', 'scripts/build.sh', 'core/**') }}
+        restore-keys: bazel-linux-${{ runner.arch }}-
     - name: Install bazelisk
       shell: bash
       env:
