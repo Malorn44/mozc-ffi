@@ -93,6 +93,7 @@ For crates.io, the crate's first version was published by hand: `cargo publish` 
   The newer commit's run does the release instead.
 - **"release-please tagged … which is not on main".** The tag points somewhere unexpected; nothing
   was built. Look at the tag and the draft release before doing anything else.
-- **A build, `release-assets` or a publish job failed.** Fix the cause on a branch if needed, then use
-  "Re-run failed jobs" on the run. The tag and draft stay as they are, and each publish job skips a
-  version its registry already has.
+- **A build, `release-assets` or a publish job failed.** Fix the cause, then use "Re-run failed jobs"
+  on the run, or "Re-run all jobs": while the release is a draft, a re-run finishes it. The tag and
+  draft stay as they are, and each publish job skips a version its registry already has. Merging
+  other PRs meanwhile is fine; each commit on `main` has its own run.
