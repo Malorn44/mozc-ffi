@@ -40,6 +40,7 @@ struct mozc_ffi_result {
   struct Segment {
     std::string reading;
     std::vector<std::string> candidates;
+    std::vector<std::string> descriptions;  // One per candidate.
   };
   std::vector<Segment> segments;
 };
@@ -153,9 +154,10 @@ mozc_ffi_result* MakeResult(const mozc::Segments& segments) {
     // Mozc's own candidate window does. learn() commits the first of them.
     std::unordered_set<std::string> seen;
     for (int j = 0; j < static_cast<int>(segment.candidates_size()); ++j) {
-      const std::string& value = segment.candidate(j).value;
-      if (seen.insert(value).second) {
-        out.candidates.push_back(value);
+      const auto& candidate = segment.candidate(j);
+      if (seen.insert(candidate.value).second) {
+        out.candidates.push_back(candidate.value);
+        out.descriptions.push_back(candidate.description);
       }
     }
     result->segments.push_back(std::move(out));
@@ -293,6 +295,16 @@ const char* mozc_ffi_candidate(const mozc_ffi_result* result, int32_t segment,
     return nullptr;
   }
   return found->candidates[index].c_str();
+}
+
+const char* mozc_ffi_candidate_description(const mozc_ffi_result* result,
+                                           int32_t segment, int32_t index) {
+  const mozc_ffi_result::Segment* found = GetSegment(result, segment);
+  if (found == nullptr || index < 0 ||
+      static_cast<size_t>(index) >= found->descriptions.size()) {
+    return nullptr;
+  }
+  return found->descriptions[index].c_str();
 }
 
 void mozc_ffi_result_free(mozc_ffi_result* result) { delete result; }

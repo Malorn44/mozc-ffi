@@ -93,6 +93,11 @@ fn converts_and_predicts() {
     assert!(!mozc.convert("かんじ", &[], "").is_empty());
     assert_eq!(mozc.last_error(), "");
 
+    let kanji = &mozc.convert("かんじ", &[3], "")[0];
+    assert_eq!(kanji.descriptions.len(), kanji.candidates.len());
+    let katakana = kanji.candidates.iter().position(|c| c == "カンジ").unwrap();
+    assert_eq!(kanji.descriptions[katakana], "カタカナ");
+
     let candidates = &mozc.convert("かんじ", &[3], "")[0].candidates;
     let mut unique = candidates.clone();
     unique.sort();

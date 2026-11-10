@@ -14,7 +14,7 @@ from __future__ import annotations
 import ctypes
 import os
 import sys
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional, Sequence
 
@@ -30,6 +30,8 @@ class MozcError(Exception):
 class Segment:
     reading: str
     candidates: list[str]
+    #: Mozc's note on each candidate (its script, an emoji's name), in Japanese; "" if none.
+    descriptions: list[str] = field(default_factory=list)
 
 
 def _library_path() -> str:
@@ -55,6 +57,7 @@ def _load(path: str) -> ctypes.CDLL:
         "mozc_ffi_segment_reading": ([result, i32], text),
         "mozc_ffi_candidate_count": ([result, i32], i32),
         "mozc_ffi_candidate": ([result, i32, i32], text),
+        "mozc_ffi_candidate_description": ([result, i32, i32], text),
         "mozc_ffi_result_free": ([result], None),
         "mozc_ffi_learn": ([handle, text, ctypes.POINTER(i32), ctypes.POINTER(text), i32, text], i32),
         "mozc_ffi_clear_learning": ([handle], i32),
@@ -170,6 +173,10 @@ class Mozc:
                     lib.mozc_ffi_segment_reading(result, s).decode("utf-8"),
                     [
                         lib.mozc_ffi_candidate(result, s, c).decode("utf-8")
+                        for c in range(lib.mozc_ffi_candidate_count(result, s))
+                    ],
+                    [
+                        lib.mozc_ffi_candidate_description(result, s, c).decode("utf-8")
                         for c in range(lib.mozc_ffi_candidate_count(result, s))
                     ],
                 )

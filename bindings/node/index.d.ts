@@ -2,6 +2,8 @@
 export interface Segment {
   reading: string;
   candidates: string[];
+  /** Mozc's note on each candidate (its script, an emoji's name), in Japanese; '' if none. */
+  descriptions: string[];
 }
 
 export const ABI_VERSION: number;

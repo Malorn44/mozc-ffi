@@ -42,6 +42,11 @@ static class Program
                 Check(mozc.LastError.Contains("do not add up"), $"and say why: {mozc.LastError}");
                 Check(mozc.Convert("かんじ").Count > 0 && mozc.LastError == "", "a success clears the error");
 
+                var kanji = mozc.Convert("かんじ", new[] { 3 })[0];
+                int katakana = kanji.Candidates.ToList().IndexOf("カンジ");
+                Check(kanji.Descriptions.Count == kanji.Candidates.Count && katakana >= 0 &&
+                      kanji.Descriptions[katakana] == "カタカナ", "candidates have descriptions");
+
                 var predictions = mozc.Predict("ありがと");
                 Check(predictions.Any(p => p.StartsWith("ありがとう", StringComparison.Ordinal)), "predict completes");
 

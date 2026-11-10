@@ -32,6 +32,8 @@ const BAD_ARGUMENT: &str = "a string contains NUL, or a length is too large";
 pub struct Segment {
     pub reading: String,
     pub candidates: Vec<String>,
+    /// Mozc's note on each candidate (its script, an emoji's name), in Japanese; "" if none.
+    pub descriptions: Vec<String>,
 }
 
 #[derive(Debug)]
@@ -77,6 +79,7 @@ struct Api {
     segment_reading: unsafe extern "C" fn(Result, i32) -> *const c_char,
     candidate_count: unsafe extern "C" fn(Result, i32) -> i32,
     candidate: unsafe extern "C" fn(Result, i32, i32) -> *const c_char,
+    candidate_description: unsafe extern "C" fn(Result, i32, i32) -> *const c_char,
     result_free: unsafe extern "C" fn(Result),
     learn: unsafe extern "C" fn(
         Handle,
@@ -121,6 +124,7 @@ impl Api {
                 segment_reading: symbol!(b"mozc_ffi_segment_reading\0"),
                 candidate_count: symbol!(b"mozc_ffi_candidate_count\0"),
                 candidate: symbol!(b"mozc_ffi_candidate\0"),
+                candidate_description: symbol!(b"mozc_ffi_candidate_description\0"),
                 result_free: symbol!(b"mozc_ffi_result_free\0"),
                 learn: symbol!(b"mozc_ffi_learn\0"),
                 clear_learning: symbol!(b"mozc_ffi_clear_learning\0"),
@@ -309,6 +313,9 @@ impl Mozc {
                     reading: text((api.segment_reading)(result, s)),
                     candidates: (0..(api.candidate_count)(result, s))
                         .map(|c| text((api.candidate)(result, s, c)))
+                        .collect(),
+                    descriptions: (0..(api.candidate_count)(result, s))
+                        .map(|c| text((api.candidate_description)(result, s, c)))
                         .collect(),
                 })
                 .collect();

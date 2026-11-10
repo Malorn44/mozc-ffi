@@ -12,14 +12,18 @@ namespace MozcFfi
     /// <summary>A segment of the reading and its candidates, best first.</summary>
     public sealed class Segment
     {
-        public Segment(string reading, IReadOnlyList<string> candidates)
+        public Segment(string reading, IReadOnlyList<string> candidates, IReadOnlyList<string> descriptions = null)
         {
             Reading = reading;
             Candidates = candidates;
+            Descriptions = descriptions ?? new string[candidates.Count];
         }
 
         public string Reading { get; }
         public IReadOnlyList<string> Candidates { get; }
+
+        /// <summary>Mozc's note on each candidate (its script, an emoji's name), in Japanese; "" if none.</summary>
+        public IReadOnlyList<string> Descriptions { get; }
     }
 
     public sealed class MozcException : Exception
@@ -167,9 +171,14 @@ namespace MozcFfi
                 for (int s = 0; s < segments.Length; s++)
                 {
                     var candidates = new string[Native.mozc_ffi_candidate_count(result, s)];
+                    var descriptions = new string[candidates.Length];
                     for (int c = 0; c < candidates.Length; c++)
+                    {
                         candidates[c] = FromUtf8(Native.mozc_ffi_candidate(result, s, c));
-                    segments[s] = new Segment(FromUtf8(Native.mozc_ffi_segment_reading(result, s)), candidates);
+                        descriptions[c] = FromUtf8(Native.mozc_ffi_candidate_description(result, s, c)) ?? "";
+                    }
+                    segments[s] = new Segment(FromUtf8(Native.mozc_ffi_segment_reading(result, s)), candidates,
+                                              descriptions);
                 }
                 return segments;
             }
@@ -228,6 +237,9 @@ namespace MozcFfi
 
             [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
             internal static extern IntPtr mozc_ffi_candidate(IntPtr result, int segment, int index);
+
+            [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
+            internal static extern IntPtr mozc_ffi_candidate_description(IntPtr result, int segment, int index);
 
             [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
             internal static extern void mozc_ffi_result_free(IntPtr result);
