@@ -27,8 +27,9 @@ CI builds, packs and publishes everything else.
 6. Once every registry has the release, `release-publish` makes the draft public.
 
 Versions follow [semantic versioning](https://semver.org/) from the conventional-commit PR titles:
-while the version is 0.x, a breaking change (`feat!:`) bumps the minor version and a `feat` or `fix`
-bumps the patch. `MOZC_FFI_ABI_VERSION` in `core/mozc_ffi.h` is separate: it changes only when the C
+a breaking change (`feat!:`, or any type with `!`) bumps the first number, a `feat` the second and a
+`fix` the third. Other types (`docs`, `ci`, `chore` and so on) make no release by themselves.
+`MOZC_FFI_ABI_VERSION` in `core/mozc_ffi.h` is separate: it changes only when the C
 API does.
 
 ## Checking a release's files
