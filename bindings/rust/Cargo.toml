@@ -9,6 +9,15 @@ readme = "../../README.md"
 description = "Unofficial Rust bindings for Google's Mozc kana-kanji converter, in process"
 keywords = ["japanese", "mozc", "ime", "kana-kanji"]
 categories = ["text-processing", "api-bindings"]
+# SHA256SUMS (the release archives' checksums) is added when the crate is published.
+include = ["src/**", "build.rs", "SHA256SUMS"]
+
+[features]
+# Fetch this version's native library from its GitHub release when building. Needs curl and tar.
+download = ["dep:sha2"]
 
 [dependencies]
 libloading = "0.9"
+
+[build-dependencies]
+sha2 = { version = "0.10", optional = true }

@@ -9,7 +9,13 @@
 //! ```
 //!
 //! The native library (`mozc_ffi.dll`, `libmozc_ffi.so`) is loaded when a `Mozc` opens: from the
-//! `MOZC_FFI_LIBRARY` environment variable, next to the executable, or the system's library path.
+//! `MOZC_FFI_LIBRARY` environment variable, next to the executable, where the `download` feature
+//! put it, or the system's library path.
+//!
+//! The crate holds no native library. Either enable the `download` feature, which fetches this
+//! version's library from its GitHub release when building and checks its SHA-256, or download
+//! the release archive yourself. To ship your program, copy the library ([`DOWNLOADED_LIBRARY`])
+//! next to your executable.
 //! Every call is self-contained. Mozc keeps the profile directory per process, so open one
 //! profile per process.
 
@@ -24,6 +30,10 @@ use libloading::Library;
 /// The C API version these bindings speak.
 pub const ABI_VERSION: i32 = 1;
 const INCOGNITO: i32 = 1;
+
+/// Where the `download` feature put the native library when this crate was built; `None`
+/// without the feature.
+pub const DOWNLOADED_LIBRARY: Option<&str> = option_env!("MOZC_FFI_DOWNLOADED");
 
 /// A segment of the reading and its candidates, best first.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -300,8 +310,9 @@ fn default_library() -> PathBuf {
     let beside = std::env::current_exe()
         .ok()
         .and_then(|exe| exe.parent().map(|dir| dir.join(name)));
-    match beside {
-        Some(path) if path.exists() => path,
+    match (beside, DOWNLOADED_LIBRARY) {
+        (Some(path), _) if path.exists() => path,
+        (_, Some(path)) if Path::new(path).exists() => PathBuf::from(path),
         _ => PathBuf::from(name),
     }
 }
