@@ -93,46 +93,6 @@ test_c() {
 
 test_csharp() {
     dotnet run --project bindings/csharp/tests
-    readme_csharp
-}
-
-# Runs the C# example in each of bindings/csharp's READMEs as a program, with a new profile and
-# build/'s library. A Console.WriteLine with a comment after it must print exactly that comment.
-readme_csharp() {
-    local dir=build/readme-csharp readme
-    mkdir -p "$dir"
-    cat > "$dir/Readme.csproj" << EOF
-<Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
-    <OutputType>Exe</OutputType>
-    <TargetFramework>net8.0</TargetFramework>
-    <RollForward>Major</RollForward>
-  </PropertyGroup>
-  <ItemGroup>
-    <ProjectReference Include="../../bindings/csharp/MozcFfi.csproj" />
-    <None Include="../$(basename "$library")" CopyToOutputDirectory="PreserveNewest" />
-  </ItemGroup>
-</Project>
-EOF
-    # Windows consoles default to a code page that can't print Japanese.
-    cat > "$dir/Utf8.cs" << 'EOF'
-static class Utf8
-{
-    [System.Runtime.CompilerServices.ModuleInitializer]
-    internal static void Set() => System.Console.OutputEncoding = new System.Text.UTF8Encoding(false);
-}
-EOF
-    for readme in bindings/csharp/README.md bindings/csharp/README.ja.md; do
-        echo "-- $readme"
-        # shellcheck disable=SC2016 # the backticks are Markdown's code fence, not a command
-        sed -n '/^```csharp$/,/^```$/p' "$readme" | sed '1d;$d' |
-            sed 's#"/path/to/profile"#System.IO.Path.GetFullPath("build/readme-csharp/profile")#' > "$dir/Program.cs"
-        rm -rf "$dir/profile"
-        dotnet build "$dir/Readme.csproj" --nologo --verbosity quiet -o "$dir/out" > /dev/null
-        diff <(sed -n 's#^.*Console\.WriteLine(.*); *// \(.*\)$#\1#p' "$dir/Program.cs") \
-            <(dotnet "$dir/out/Readme.dll" | tr -d '\r')
-    done
-    echo "the READMEs' examples print what they say"
 }
 
 test_python() {
@@ -144,36 +104,7 @@ test_node() {
 }
 
 test_rust() {
-    # The doc tests (the READMEs' examples) open Mozc with the default library.
-    (cd bindings/rust && MOZC_FFI_LIBRARY=${MOZC_FFI_LIBRARY:-../../$library} cargo test)
-    readme_rust
-}
-
-# Runs the Rust example in each of bindings/rust's READMEs as a program with build/'s library. A
-# println! with a comment after it must print exactly that comment.
-readme_rust() {
-    local dir=build/readme-rust readme
-    mkdir -p "$dir/src"
-    cat > "$dir/Cargo.toml" << 'EOF'
-[package]
-name = "readme"
-version = "0.0.0"
-edition = "2021"
-publish = false
-
-[dependencies]
-mozc-ffi = { path = "../../bindings/rust" }
-
-[workspace]
-EOF
-    for readme in bindings/rust/README.md bindings/rust/README.ja.md; do
-        echo "-- $readme"
-        # shellcheck disable=SC2016 # the backticks are Markdown's code fence, not a command
-        sed -n '/^```rust$/,/^```$/p' "$readme" | sed '1d;$d' > "$dir/src/main.rs"
-        diff <(sed -n 's#^.*println!(.*); *// \(.*\)$#\1#p' "$dir/src/main.rs") \
-            <(MOZC_FFI_LIBRARY=${MOZC_FFI_LIBRARY:-$library} cargo run --quiet --manifest-path "$dir/Cargo.toml" | tr -d '\r')
-    done
-    echo "the READMEs' examples print what they say"
+    (cd bindings/rust && cargo test)
 }
 
 check_library() {

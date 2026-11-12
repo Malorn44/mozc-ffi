@@ -149,7 +149,7 @@ fs.writeFileSync(dir + "/package.json", JSON.stringify({
   version,
   description: `The native library of mozc-ffi for ${os}-${cpu}`,
   license: "BSD-3-Clause",
-  homepage: "https://malorn44.github.io/mozc-ffi/node/",
+  homepage: "https://mozc-ffi.readthedocs.io/stable/node/",
   repository: { type: "git", url: "git+https://github.com/Malorn44/mozc-ffi.git" },
   os: [os],
   cpu: [cpu],
