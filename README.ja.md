@@ -6,52 +6,76 @@ Google 製のオープンソース日本語かな漢字変換エンジン [Mozc]
 
 呼び出しはそれぞれ独立しています。読みと、必要に応じて文節の長さと直前の文を渡すと、文節ごとの候補が返ってきます。`learn` で学習させた候補は、次回から先頭に並びます。
 
-| | |
-|---|---|
-| `core/` | C API（`mozc_ffi.h`）と、Mozc の変換エンジンを使ったその実装 |
-| `bindings/python/` | Python バインディング（ctypes、1 モジュール）とテスト |
-| `bindings/csharp/` | C# バインディング（netstandard2.0、Unity でも動作）とテスト |
-| `bindings/unity/` | Unity パッケージ用のファイル（`package.json` と `.meta`）。`scripts/package.sh` が C# バインディングとライブラリを加えます |
-| `bindings/rust/` | Rust バインディング（`mozc-ffi` クレート）とテスト |
-| `bindings/node/` | Node.js バインディング（koffi、TypeScript の型定義付き）とテスト |
-| `scripts/` | ビルドスクリプト、`check.sh`（すべての lint とテスト）、固定した Mozc のコミット（`MOZC_COMMIT`） |
-| `tests/` | すべてのテストで使う日常的なチャットの文例 `chat.tsv` と、API を使う C プログラム `smoke.c` |
+## 対応言語
 
-## インストール
+どのパッケージにもビルド済みのライブラリが入っています。対応環境は Linux x64 と arm64（glibc 2.28 以降）、Windows x64 です。インストール方法、使用例、ライブラリの読み込み方は、各言語の README にあります。
 
-どのパッケージにもビルド済みのライブラリが入っています。対応環境は Linux x64 と arm64（glibc 2.28 以降）、Windows x64 です。
+| | インストール | 必要なもの | |
+|---|---|---|---|
+| Python | `pip install mozc-ffi` | Python 3.11 以降 | [README](bindings/python/README.ja.md) |
+| C# | `dotnet add package MozcFfi` | .NET Standard 2.0 | [README](bindings/csharp/README.ja.md) |
+| Unity | npm の `com.malorn44.mozc-ffi` パッケージ | Unity 2021.3 以降、Windows または Linux の x64 | [README](bindings/unity/README.ja.md) |
+| Node.js | `npm install mozc-ffi` | Node.js 22 以降 | [README](bindings/node/README.ja.md) |
+| Rust | `cargo add mozc-ffi --features download` | Rust 1.88 以降 | [README](bindings/rust/README.ja.md) |
+| C | [Releases](https://github.com/Malorn44/mozc-ffi/releases) のアーカイブ | | [下記](#c) |
 
-| | インストール | 必要なもの |
-|---|---|---|
-| Python | `pip install mozc-ffi` | Python 3.11 以降 |
-| C# | `dotnet add package MozcFfi` | .NET Standard 2.0 |
-| Unity | `com.malorn44.mozc-ffi` パッケージ（下記） | Unity 2021.3 以降、Windows または Linux の x64 |
-| Node.js | `npm install mozc-ffi` | Node.js 22 以降 |
-| Rust | `cargo add mozc-ffi --features download` | Rust 1.88 以降 |
-| C | [Releases](https://github.com/Malorn44/mozc-ffi/releases) のアーカイブ | |
+```python
+from mozc_ffi import Mozc
 
-Rust のクレートに入っているのはバインディングだけです。ライブラリが crates.io の上限より大きいためです。`download` フィーチャーを有効にすると、ビルド時にそのバージョンのリリースからライブラリを取得し、SHA-256 を検証します（`curl` と `tar` が必要です）。
-
-```sh
-cargo add mozc-ffi --features download
+with Mozc("/path/to/profile") as mozc:
+    segments = mozc.convert("きょうはさむいですね")
+    print("".join(s.candidates[0] for s in segments))  # 今日は寒いですね
 ```
 
-プログラムを配布するときは、ライブラリ（`mozc_ffi::DOWNLOADED_LIBRARY`）を実行ファイルと同じ場所にコピーしてください。フィーチャーを使わない場合は、[Releases](https://github.com/Malorn44/mozc-ffi/releases) から使用する環境のアーカイブをダウンロードし、`libmozc_ffi.so` または `mozc_ffi.dll` を実行ファイルと同じ場所に置くか、`MOZC_FFI_LIBRARY` にそのパスを設定してください。
+要求どおりに処理できなかった呼び出しは、空のリストまたは false を返します。理由は `last_error` で英語の文として取得でき、入力された文字列がそこに含まれることはありません。文節の長さは Unicode の文字数で数えます。Mozc はプロファイルディレクトリをプロセス単位で保持するため、1 つのプロセスで開くプロファイルは 1 つだけにしてください。`incognito` を指定すると何も学習しません。
 
-Unity では、プロジェクトの `Packages/manifest.json` に、npm をスコープ付きレジストリとして追加し、パッケージを依存関係に加えてください（既存の内容はそのまま残します）。パッケージには C# バインディングとライブラリが入っており、新しいバージョンは Package Manager に表示されます。
+## C
 
-```json
-{
-  "scopedRegistries": [
-    { "name": "npm", "url": "https://registry.npmjs.org", "scopes": ["com.malorn44"] }
-  ],
-  "dependencies": {
-    "com.malorn44.mozc-ffi": "0.2.0"
+アーカイブには、ヘッダー、ライブラリ、そして Windows 用にはインポートライブラリが入っています。チェックサムは `SHA256SUMS` にあります。すべての関数の説明は [`mozc_ffi.h`](core/mozc_ffi.h) にあります。
+
+```c
+#include <stdio.h>
+
+#include "mozc_ffi.h"
+
+int main(void) {
+  mozc_ffi* mozc = mozc_ffi_open("/path/to/profile", 0);
+  if (mozc == NULL) {
+    fprintf(stderr, "%s\n", mozc_ffi_last_error());
+    return 1;
   }
+  mozc_ffi_result* result = mozc_ffi_convert(mozc, "きょうはさむいですね", NULL, 0, NULL);
+  for (int32_t s = 0; s < mozc_ffi_segment_count(result); s++) {
+    fputs(mozc_ffi_candidate(result, s, 0), stdout);  // 今日は寒いですね
+  }
+  putchar('\n');
+  mozc_ffi_result_free(result);
+  mozc_ffi_close(mozc);
+  return 0;
 }
 ```
 
-アーカイブには、ヘッダー、ライブラリ、そして Windows 用にはインポートライブラリが入っています。チェックサムは `SHA256SUMS` にあります。
+```sh
+cc -std=c99 -Iinclude example.c -Llib -lmozc_ffi -o example
+LD_LIBRARY_PATH=lib ./example
+```
+
+文字列はすべて UTF-8 です。結果の文字列は `mozc_ffi_result_free` を呼ぶまで有効です。1 つのハンドルは複数のスレッドから使え、呼び出しは順番に処理されます。
+
+## リポジトリ
+
+| | |
+|---|---|
+| `core/` | C API（`mozc_ffi.h`）と、Mozc の変換エンジンを使ったその実装 |
+| `bindings/python/` | Python バインディング（ctypes、1 モジュール）と README、テスト |
+| `bindings/csharp/` | C# バインディング（netstandard2.0、Unity でも動作）と README、テスト |
+| `bindings/unity/` | Unity パッケージ用のファイル（`package.json`、README、`.meta`）。`scripts/package.sh` が C# バインディングとライブラリを加えます |
+| `bindings/rust/` | Rust バインディング（`mozc-ffi` クレート）と README、テスト |
+| `bindings/node/` | Node.js バインディング（koffi、TypeScript の型定義付き）と README、テスト |
+| `scripts/` | ビルドスクリプト、`check.sh`（すべての lint とテスト）、固定した Mozc のコミット（`MOZC_COMMIT`） |
+| `tests/` | すべてのテストで使う日常的なチャットの文例 `chat.tsv` と、API を使う C プログラム `smoke.c` |
+
+各パッケージの README は `bindings/` の各ディレクトリにあるもので、PyPI、NuGet、npm、crates.io にもそれが表示されます。
 
 ## ビルド
 
@@ -71,43 +95,6 @@ Windows では Bazelisk、Git、Python 3.12 以降、C++ ツールと C++ ATL �
 
 DLL は C++ ランタイムを静的リンクしているので、Visual C++ 再頒布可能パッケージは不要です。
 
-## 使い方
-
-```python
-from mozc_ffi import Mozc
-
-with Mozc("/path/to/profile") as mozc:
-    mozc.convert("ここではきものをぬぐ", [3, 5, 2])  # [Segment("ここで", [...]), Segment("はきものを", ["履物を", ...]), ...]
-    mozc.predict("ありがと")                     # ["ありがとう", ...]
-    mozc.learn("かんじ", [3], ["感じ"])           # 次回から「感じ」が先頭に
-```
-
-```csharp
-using var mozc = new MozcFfi.Mozc(profileDir);
-var segments = mozc.Convert("きょうはさむいですね");   // segments[0].Candidates[0] == "今日は"
-mozc.Learn("かんじ", new[] { 3 }, new[] { "感じ" });
-```
-
-```rust
-let mozc = mozc_ffi::Mozc::open(Some(Path::new("/path/to/profile")), false)?;
-let segments = mozc.convert("ここではきものをぬぐ", &[3, 5, 2], "");
-mozc.learn("かんじ", &[3], &["感じ"], "");
-```
-
-```js
-const { Mozc } = require('mozc-ffi');
-const mozc = new Mozc('/path/to/profile');
-mozc.convert('ここではきものをぬぐ', [3, 5, 2]);
-mozc.learn('かんじ', [3], ['感じ']);
-mozc.close();
-```
-
-各バインディングは Mozc を開くときにライブラリを読み込みます。読み込み元は `MOZC_FFI_LIBRARY`、プログラム（またはパッケージ）と同じ場所、またはシステムのライブラリパスです。一度読み込んだライブラリは、プロセスが終了するまで読み込まれたままです。
-
-要求どおりに処理できなかった呼び出しは、空のリストまたは false を返します。理由は `last_error` で英語の文として取得でき、入力された文字列がそこに含まれることはありません。
-
-文節の長さは Unicode の文字数で数えます。Mozc はプロファイルディレクトリをプロセス単位で保持するため、1 つのプロセスで開くプロファイルは 1 つだけにしてください。`incognito` を指定すると何も学習しません。
-
 ## テスト
 
 ```sh
@@ -116,7 +103,7 @@ scripts/check.sh lint python  # lint を 1 つだけ: c, python, csharp, rust, n
 scripts/check.sh test rust    # 1 つのバインディングのテスト: c, csharp, python, node, rust
 ```
 
-テストは `build/` にあるライブラリを使います。CI はすべてのプルリクエストで、同じコマンドを Linux と Windows で実行します。
+テストは `build/` にあるライブラリを使います。各バインディングのテストでは、その README の使用例も実行し、コメントに書いたとおりの出力になるかを確かめます（Rust は実行せずコンパイルのみ）。CI はすべてのプルリクエストで、同じコマンドを Linux と Windows で実行します。
 
 ## リリース
 

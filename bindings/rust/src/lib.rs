@@ -1,23 +1,11 @@
-//! Rust bindings for mozc-ffi: Mozc's kana-kanji converter, in process.
-//!
-//! ```no_run
-//! let mozc = mozc_ffi::Mozc::open(Some(std::path::Path::new("/path/to/profile")), false)?;
-//! let segments = mozc.convert("ここではきものをぬぐ", &[3, 5, 2], ""); // fixed lengths, in characters
-//! let completions = mozc.predict("ありがと", "");
-//! mozc.learn("かんじ", &[3], &["感じ"], ""); // 感じ ranks first next time
-//! # Ok::<(), mozc_ffi::Error>(())
-//! ```
-//!
-//! The native library (`mozc_ffi.dll`, `libmozc_ffi.so`) is loaded when a `Mozc` opens: from the
-//! `MOZC_FFI_LIBRARY` environment variable, next to the executable, where the `download` feature
-//! put it, or the system's library path.
-//!
-//! The crate holds no native library. Either enable the `download` feature, which fetches this
-//! version's library from its GitHub release when building and checks its SHA-256, or download
-//! the release archive yourself. To ship your program, copy the library ([`DOWNLOADED_LIBRARY`])
-//! next to your executable.
-//! Every call is self-contained. Mozc keeps the profile directory per process, so open one
-//! profile per process.
+// The crate's documentation is its README, so docs.rs, crates.io and GitHub say the same, and
+// `cargo test` compiles its example.
+#![doc = include_str!("../README.md")]
+
+/// The Japanese README's example, compiled by `cargo test` like the English one's.
+#[cfg(doctest)]
+#[doc = include_str!("../README.ja.md")]
+pub struct ReadmeJa;
 
 use std::ffi::{c_char, c_void, CStr, CString};
 use std::fmt;

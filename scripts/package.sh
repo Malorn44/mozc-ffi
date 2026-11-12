@@ -13,12 +13,13 @@
 #   nuget/   MozcFfi, with every platform's library
 #   npm/     mozc-ffi, @mozc-ffi/linux-x64, @mozc-ffi/linux-arm64, @mozc-ffi/win32-x64, and the
 #            Unity package com.malorn44.mozc-ffi (Unity reads npm as a scoped registry)
-# Each one also holds LICENSE and THIRD_PARTY_NOTICES.md. VERSION must be the version in every
-# package file (release-please keeps them equal). Needs python3, dotnet and npm.
+# Each one also holds LICENSE and THIRD_PARTY_NOTICES.md, and each package its own README: its
+# bindings/ directory's, or for a platform's npm package, a short one written here. VERSION must be
+# the version in every package file (release-please keeps them equal). Needs python3, dotnet and npm.
 set -euo pipefail
 
 if [ $# -ne 5 ]; then
-    sed -n '2,17p' "$0" >&2
+    sed -n '2,18p' "$0" >&2
     exit 2
 fi
 version=$1 linux=$(cd -- "$2" && pwd) linux_arm64=$(cd -- "$3" && pwd) windows=$(cd -- "$4" && pwd) out=$5
@@ -95,8 +96,7 @@ for platform in "manylinux_2_28_x86_64 $linux/libmozc_ffi.so" "manylinux_2_28_aa
     cp -r "$root/bindings/python/pyproject.toml" "$root/bindings/python/mozc_ffi" "$dir/"
     rm -rf "$dir/mozc_ffi/__pycache__"
     cp "$library" "$root/THIRD_PARTY_NOTICES.md" "$dir/mozc_ffi/"
-    cp "$root/LICENSE" "$root/README.md" "$dir/"
-    sed -i 's/^license = "BSD-3-Clause"$/&\nreadme = "README.md"/' "$dir/pyproject.toml"
+    cp "$root/LICENSE" "$root/bindings/python/README.md" "$dir/"
     "$python" -m build --wheel --outdir "$dir/dist" "$dir" > /dev/null
     # The library makes it platform-specific; ctypes keeps it independent of the Python version.
     "$python" -m wheel tags --remove --platform-tag "$tag" "$dir"/dist/*.whl > /dev/null
@@ -107,8 +107,8 @@ done
 
 dir=$stage/nuget
 mkdir -p "$dir/runtimes/linux-x64/native" "$dir/runtimes/linux-arm64/native" "$dir/runtimes/win-x64/native"
-cp "$root/bindings/csharp/MozcFfi.cs" "$root/bindings/csharp/MozcFfi.csproj" "$dir/"
-cp "$root/README.md" "$root/THIRD_PARTY_NOTICES.md" "$dir/"
+cp "$root/bindings/csharp/MozcFfi.cs" "$root/bindings/csharp/MozcFfi.csproj" "$root/bindings/csharp/README.md" "$dir/"
+cp "$root/THIRD_PARTY_NOTICES.md" "$dir/"
 cp "$linux/libmozc_ffi.so" "$dir/runtimes/linux-x64/native/"
 cp "$linux_arm64/libmozc_ffi.so" "$dir/runtimes/linux-arm64/native/"
 cp "$windows/mozc_ffi.dll" "$dir/runtimes/win-x64/native/"
@@ -120,8 +120,9 @@ dotnet pack "$dir/MozcFfi.csproj" --configuration Release --output "$out/nuget" 
 mkdir -p "$out/npm"
 dir=$stage/npm/mozc-ffi
 mkdir -p "$dir"
-cp "$root/bindings/node/package.json" "$root/bindings/node/index.js" "$root/bindings/node/index.d.ts" "$dir/"
-cp "${notices[@]}" "$root/README.md" "$dir/"
+cp "$root/bindings/node/package.json" "$root/bindings/node/index.js" "$root/bindings/node/index.d.ts" \
+    "$root/bindings/node/README.md" "$dir/"
+cp "${notices[@]}" "$dir/"
 # shellcheck disable=SC2016 # ${platform} is a JavaScript template string, for node
 node -e '
 const fs = require("fs"); const [file, version] = process.argv.slice(1);
@@ -142,16 +143,28 @@ for platform in "linux x64 $linux/libmozc_ffi.so" "linux arm64 $linux_arm64/libm
     # shellcheck disable=SC2016 # ${os} and the like are JavaScript template strings, for node
     node -e '
 const fs = require("fs"); const [dir, version, os, cpu, library] = process.argv.slice(1);
+const name = `@mozc-ffi/${os}-${cpu}`;
 fs.writeFileSync(dir + "/package.json", JSON.stringify({
-  name: `@mozc-ffi/${os}-${cpu}`,
+  name,
   version,
   description: `The native library of mozc-ffi for ${os}-${cpu}`,
   license: "BSD-3-Clause",
+  homepage: "https://malorn44.github.io/mozc-ffi/node/",
   repository: { type: "git", url: "git+https://github.com/Malorn44/mozc-ffi.git" },
   os: [os],
   cpu: [cpu],
   files: [library, "THIRD_PARTY_NOTICES.md"],
-}, null, 2) + "\n");' "$dir" "$version" "$os" "$cpu" "$(basename "$library")"
+}, null, 2) + "\n");
+fs.writeFileSync(dir + "/README.md", `# ${name}
+
+The native library of [mozc-ffi](https://www.npmjs.com/package/mozc-ffi), Node.js bindings for Google\x27s Mozc
+kana-kanji converter, for ${os}-${cpu}.
+
+Install \`mozc-ffi\` instead. It lists this package and the ones for the other platforms as optional
+dependencies, and npm installs only the one that matches the machine.
+
+BSD-3-Clause. The library contains Mozc and its dictionary, whose licences are in THIRD_PARTY_NOTICES.md.
+`);' "$dir" "$version" "$os" "$cpu" "$(basename "$library")"
     npm pack --silent --pack-destination "$out/npm" "$dir" > /dev/null
 done
 
@@ -163,7 +176,7 @@ done
 dir=$stage/unity
 cp -r "$root/bindings/unity" "$dir"
 cp "$root/bindings/csharp/MozcFfi.cs" "$dir/Runtime/"
-cp "$root/README.md" "$root/THIRD_PARTY_NOTICES.md" "$dir/"
+cp "$root/THIRD_PARTY_NOTICES.md" "$dir/"
 cp "$root/LICENSE" "$dir/LICENSE.md"
 cp "$linux/libmozc_ffi.so" "$windows/mozc_ffi.dll" "$dir/Runtime/Plugins/x86_64/"
 missing=$(cd "$dir" && find . -mindepth 1 ! -name '*.meta' ! -exec test -e '{}.meta' ';' -print)

@@ -7,6 +7,7 @@ name = "mozc-ffi"
 version = "0.2.0"
 description = "Unofficial Python bindings for Google's Mozc kana-kanji converter, in process"
 license = "BSD-3-Clause"
+readme = "README.md"
 keywords = ["japanese", "mozc", "ime", "kana-kanji"]
 requires-python = ">=3.11"
 
