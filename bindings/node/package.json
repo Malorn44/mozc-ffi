@@ -1,6 +1,6 @@
 {
   "name": "mozc-ffi",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Unofficial Node.js bindings for Google's Mozc kana-kanji converter, in process",
   "license": "BSD-3-Clause",
   "homepage": "https://mozc-ffi.readthedocs.io/stable/node/",

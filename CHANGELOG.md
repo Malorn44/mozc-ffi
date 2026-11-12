@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.3.0](https://github.com/Malorn44/mozc-ffi/compare/v0.2.0...v0.3.0) (2026-11-12)
+
+
+### Features
+
+* link each package to its docs, and ship the C# doc comments ([#26](https://github.com/Malorn44/mozc-ffi/issues/26)) ([67981c9](https://github.com/Malorn44/mozc-ffi/commit/67981c91a1bae3afc3219077652fcc4a24ba5857))
+* **python:** support Python 3.10 ([#31](https://github.com/Malorn44/mozc-ffi/issues/31)) ([a07bc4a](https://github.com/Malorn44/mozc-ffi/commit/a07bc4a9a41e0cf7d90e21bb11551d996983575f))
+
+
+### Bug Fixes
+
+* refuse a profile that can't be written, instead of crashing in learn ([#29](https://github.com/Malorn44/mozc-ffi/issues/29)) ([b2e8dd1](https://github.com/Malorn44/mozc-ffi/commit/b2e8dd1320ae20ed534036950755f0370c2d0fb6))
+
 ## [0.2.0](https://github.com/Malorn44/mozc-ffi/compare/v0.1.1...v0.2.0) (2026-11-10)
 
 

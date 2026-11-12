@@ -1,6 +1,6 @@
 {
   "name": "com.malorn44.mozc-ffi",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "displayName": "Mozc FFI",
   "description": "Unofficial C# bindings for Google's Mozc kana-kanji converter, in process, with the native library for Windows x64 and Linux x64.",
   "unity": "2021.3",
