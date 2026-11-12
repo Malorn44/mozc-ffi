@@ -12,7 +12,8 @@ back segments with candidates. Picks you `learn` rank first next time.
 ## Languages
 
 Each package comes with the library already built, for Linux x64 and arm64 (glibc 2.28 or later) and Windows x64.
-Each language's README covers installing it, an example and how it finds the library.
+Each language's README covers installing it, an example and how it finds the library, and the
+[documentation site](https://malorn44.github.io/mozc-ffi/) has them all, with API references.
 
 | | Install | Needs | |
 |---|---|---|---|
@@ -86,6 +87,7 @@ threads; calls on it are serialized.
 | `bindings/node/` | Node.js bindings (koffi, with TypeScript types), their README and tests |
 | `scripts/` | The build scripts, `check.sh` (every lint check and test), the pinned Mozc commit (`MOZC_COMMIT`) |
 | `tests/` | `chat.tsv`, everyday chat sentences used by every test suite, and `smoke.c`, a C program using the API |
+| `docs/`, `mkdocs.yml` | The documentation site. Each language's page includes its README, so they never disagree |
 
 Each package's README is the one in its `bindings/` directory, and is what PyPI, NuGet, npm and crates.io show.
 
@@ -114,7 +116,7 @@ The DLL links the C++ runtime statically, so it needs no Visual C++ Redistributa
 
 ```sh
 scripts/check.sh              # every lint check, then every test
-scripts/check.sh lint python  # one lint check: c, python, csharp, rust, node, scripts
+scripts/check.sh lint python  # one lint check: c, python, csharp, rust, node, scripts, docs
 scripts/check.sh test rust    # one binding's tests: c, csharp, python, node, rust
 ```
 

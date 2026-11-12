@@ -28,7 +28,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        check: [c, python, csharp, rust, node, scripts]
+        check: [c, python, csharp, rust, node, scripts, docs]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - if: matrix.check == 'node'
@@ -173,6 +173,32 @@ jobs:
           # Skipped is fine (pr-title, off pull requests); failed or cancelled is not.
           jq -r 'to_entries[] | "\(.key): \(.value.result)"' <<< "$NEEDS"
           jq -e 'all(.[]; .result == "success" or .result == "skipped")' <<< "$NEEDS" > /dev/null
+
+  # The docs site (mkdocs.yml), from main once every check passed, to GitHub Pages at
+  # https://malorn44.github.io/mozc-ffi/ (Settings → Pages → Source: GitHub Actions).
+  docs-publish:
+    needs: ci-ok
+    if: ${{ !cancelled() && needs.ci-ok.result == 'success' && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-24.04
+    permissions:
+      pages: write # deploy to Pages
+      id-token: write # prove the deployment comes from this workflow
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    concurrency:
+      group: pages # one deployment at a time, in order
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - run: scripts/check.sh lint docs
+      - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          path: build/site
+      - id: deploy
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1
 
   # release-please (.github/release-please/) opens the release PR and, once it merges, tags the release
   # and drafts it on GitHub. It acts with RELEASE_PLEASE_TOKEN, a fine-grained token for this repo, so

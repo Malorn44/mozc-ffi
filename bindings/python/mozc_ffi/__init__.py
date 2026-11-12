@@ -3,7 +3,7 @@
     with Mozc("/path/to/profile") as mozc:
         mozc.convert("きょうはさむいですね")         # [Segment("きょうは", ["今日は", ...]), ...]
         mozc.convert("ここではきものをぬぐ", [3, 5, 2])  # fixed segment lengths, in characters
-        mozc.predict("ありがと")                     # ["ありがとう", ...]
+        mozc.predict("ありがと")                     # ["ありがとうございます", ...]
         mozc.learn("かんじ", [3], ["感じ"])           # 感じ ranks first next time
 
 The library is found from MOZC_FFI_LIBRARY, next to this file, or on the system's library path.
@@ -19,19 +19,24 @@ from pathlib import Path
 from typing import Optional, Sequence
 
 ABI_VERSION = 2
+"""The C API version these bindings speak; the library must report the same."""
 _INCOGNITO = 1
 
 
 class MozcError(Exception):
-    pass
+    """Mozc could not open: the library is missing or speaks another ABI, or Mozc failed to start."""
 
 
 @dataclass(frozen=True)
 class Segment:
+    """A segment of the reading and its candidates, best first."""
+
     reading: str
+    """The part of the reading this segment covers, in hiragana."""
     candidates: list[str]
-    #: Mozc's note on each candidate (its script, an emoji's name), in Japanese; "" if none.
+    """What the segment can be written as, best first."""
     descriptions: list[str] = field(default_factory=list)
+    """Mozc's note on each candidate (its script, an emoji's name), in Japanese; "" if none."""
 
 
 def _library_path() -> str:
@@ -86,6 +91,11 @@ class Mozc:
     def __init__(
         self, profile_dir: Optional[str | os.PathLike] = None, *, incognito: bool = False, library: Optional[str] = None
     ) -> None:
+        """Opens Mozc, or raises MozcError.
+
+        `profile_dir` keeps what Mozc learns (None: Mozc's default). `incognito` learns nothing and leaves the
+        profile untouched. `library` is the native library's path, instead of looking for it.
+        """
         self._lib = _load(library or _library_path())
         profile = None if profile_dir is None else os.fspath(profile_dir)
         self._error = ""
@@ -95,6 +105,7 @@ class Mozc:
 
     @property
     def mozc_version(self) -> str:
+        """Mozc's version, such as "2.32.5994.102"."""
         return self._lib.mozc_ffi_mozc_version().decode("utf-8")
 
     @property
@@ -131,12 +142,15 @@ class Mozc:
         )
 
     def clear_learning(self) -> bool:
+        """Forgets everything learned."""
         return self._ok(self._lib.mozc_ffi_clear_learning(self._open()))
 
     def flush(self) -> bool:
+        """Writes what was learned to the profile."""
         return self._ok(self._lib.mozc_ffi_flush(self._open()))
 
     def close(self) -> None:
+        """Saves what was learned and frees the engine. Leaving a `with` block closes it too."""
         if self._handle:
             self._lib.mozc_ffi_close(self._handle)
             self._handle = None

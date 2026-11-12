@@ -56,6 +56,8 @@ gh attestation verify mozc-ffi-X.Y.Z-linux-x64.tar.gz -R Malorn44/mozc-ffi
   - crates.io: a trusted publisher on the `mozc-ffi` crate.
   - npm also holds the Unity package, `com.malorn44.mozc-ffi`, with the same trusted publisher.
 - The `releases` ruleset keeps `v*` tags from being moved or deleted.
+- GitHub Pages, with Source "GitHub Actions" (Settings → Pages): `docs-publish` deploys the docs site
+  there from every commit on `main` that passes CI, not only from releases.
 
 ### A package's first version on npm or crates.io
 

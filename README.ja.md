@@ -8,7 +8,7 @@ Google 製のオープンソース日本語かな漢字変換エンジン [Mozc]
 
 ## 対応言語
 
-どのパッケージにもビルド済みのライブラリが入っています。対応環境は Linux x64 と arm64（glibc 2.28 以降）、Windows x64 です。インストール方法、使用例、ライブラリの読み込み方は、各言語の README にあります。
+どのパッケージにもビルド済みのライブラリが入っています。対応環境は Linux x64 と arm64（glibc 2.28 以降）、Windows x64 です。インストール方法、使用例、ライブラリの読み込み方は、各言語の README にあります。[ドキュメントサイト](https://malorn44.github.io/mozc-ffi/ja/)には、それらすべてと API リファレンスがあります。
 
 | | インストール | 必要なもの | |
 |---|---|---|---|
@@ -78,6 +78,7 @@ LD_LIBRARY_PATH=lib ./example
 | `bindings/node/` | Node.js バインディング（koffi、TypeScript の型定義付き）と README、テスト |
 | `scripts/` | ビルドスクリプト、`check.sh`（すべての lint とテスト）、固定した Mozc のコミット（`MOZC_COMMIT`） |
 | `tests/` | すべてのテストで使う日常的なチャットの文例 `chat.tsv` と、API を使う C プログラム `smoke.c` |
+| `docs/`、`mkdocs.yml` | ドキュメントサイト。各言語のページはその README を取り込むので、内容が食い違うことはありません |
 
 各パッケージの README は `bindings/` の各ディレクトリにあるもので、PyPI、NuGet、npm、crates.io にもそれが表示されます。
 
@@ -103,7 +104,7 @@ DLL は C++ ランタイムを静的リンクしているので、Visual C++ 再
 
 ```sh
 scripts/check.sh              # すべての lint を実行してから、すべてのテスト
-scripts/check.sh lint python  # lint を 1 つだけ: c, python, csharp, rust, node, scripts
+scripts/check.sh lint python  # lint を 1 つだけ: c, python, csharp, rust, node, scripts, docs
 scripts/check.sh test rust    # 1 つのバインディングのテスト: c, csharp, python, node, rust
 ```
 
