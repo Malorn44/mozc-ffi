@@ -1,0 +1,107 @@
+# mozc-ffi（Rust）
+
+[English](https://github.com/Malorn44/mozc-ffi/blob/main/bindings/rust/README.md) | 日本語
+
+<!-- --8<-- [start:guide] -->
+
+Google 製のオープンソース日本語かな漢字変換エンジン [Mozc](https://github.com/google/mozc) を Rust から使うためのバインディングです。Mozc は辞書を内蔵した状態でアプリと同じプロセス内で動作するため、`mozc_server` も IPC も Mozc 本体のインストールも不要です。非公式のもので、Google とは関係ありません。
+
+## インストール
+
+```sh
+cargo add mozc-ffi --features download
+```
+
+Rust 1.88 以降が必要です。
+
+ネイティブライブラリが crates.io の上限より大きいため、クレートに入っているのはバインディングだけです。`download` フィーチャーを有効にすると、ビルド時にそのバージョンの [GitHub のリリース](https://github.com/Malorn44/mozc-ffi/releases) からライブラリを取得し、SHA-256 を検証します（`curl` と `tar` が必要です）。フィーチャーを使わない場合は、リリースから使用する環境のアーカイブを自分でダウンロードしてください。
+
+## 対応環境
+
+Linux x64 と arm64（glibc 2.28 以降）、Windows x64 です。ほかの環境では `download` フィーチャーがエラーでビルドを止めるので、ライブラリを自分でビルドして `MOZC_FFI_LIBRARY` を設定してください（後述）。
+
+## 使用例
+
+```rust
+use std::path::Path;
+
+use mozc_ffi::Mozc;
+
+fn main() -> Result<(), mozc_ffi::Error> {
+    let mozc = Mozc::open(Some(Path::new("/path/to/profile")), false)?;
+    let best = |reading: &str| -> String {
+        let segments = mozc.convert(reading, &[], "");
+        segments.iter().map(|s| s.candidates[0].as_str()).collect()
+    };
+    println!("{}", best("きょうはさむいですね")); // 今日は寒いですね
+
+    // 文節の長さを指定: ここで / はきものを / ぬぐ
+    let segments = mozc.convert("ここではきものをぬぐ", &[3, 5, 2], "");
+    println!("{:?}", &segments[1].candidates[..2]); // ["は着物を", "履物を"]
+
+    // 確定した変換は、次回から第一候補になる
+    mozc.learn("ここではきものをぬぐ", &[3, 5, 2], &["ここで", "履物を", "脱ぐ"], "");
+    println!("{}", best("ここではきものをぬぐ")); // ここで履物を脱ぐ
+
+    println!("{:?}", &mozc.predict("ありがと", "")[..2]); // ["ありがとうございます", "ありがとう"]
+    Ok(())
+}
+```
+
+出力は新しいプロファイルでのものです。学習が進むと、第一候補はユーザーの選択に沿って変わります。
+
+## 呼び出し一覧
+
+呼び出しはそれぞれ独立しています。ひらがなの読みと、必要に応じて文節の長さと直前のテキストを渡すと、文節ごとの候補が返ってきます。Mozc と同期させておく状態はありません。
+
+| | |
+|---|---|
+| `Mozc::open(profile_dir, incognito)` | Mozc を開きます。drop すると学習した内容が保存されます。 |
+| `convert(reading, lengths, context)` | `Segment`（`reading`、`candidates`、`descriptions`）の一覧。候補は優先度の高い順です。`lengths` で文節の区切りを指定でき、`&[]` なら Mozc が決めます。`context` は読みの直前のテキストで、最初の文節を変換する手がかりになります。なければ `""`。 |
+| `predict(reading, context)` | 入力途中の読みの予測候補。優先度の高い順です。 |
+| `learn(reading, lengths, texts, context)` | 文節 `i` で `texts[i]` が選ばれたことを学習し、次回から第一候補にします。 |
+| `clear_learning()` | 学習した内容をすべて消します。 |
+| `flush()` | 学習した内容をすぐにプロファイルへ書き込みます。`Mozc` を drop したときにも書き込まれます。 |
+| `last_error()` | 直前の呼び出しが失敗した理由。成功していれば `""`。 |
+| `mozc_version()` | Mozc のバージョン（例: `"3.35.6354.102"`）。 |
+
+文節の長さはバイト数ではなく Unicode の文字数で数え、合計が読みの長さと一致する必要があります。`descriptions` には各候補についての Mozc の注記（例: `カタカナ`）が日本語で入り、注記がなければ `""` です。
+
+## エラー
+
+要求どおりに処理できなかった呼び出しは空の `Vec` または `false` を返し、理由は `last_error()` で確認できます。「the segment lengths do not add up to the reading's length」のような英語の文です。入力された文字列が含まれることはありません。候補にないテキストがあると、`learn` は `false` を返し、何も学習しません。
+
+ライブラリを読み込めない場合（`Load`）、C API のバージョンが異なる場合（`Abi`）、プロファイルのパスが UTF-8 でない場合（`Path`）、Mozc を起動できない場合（`Open`）、`Mozc::open` は `Error` を返します。
+
+## プロファイル
+
+プロファイルディレクトリには Mozc が学習した内容が保存され、存在しなければ作成されます。`None` を渡すと Mozc の既定の場所（Linux では、`~/.mozc` があればそこ、なければ `$XDG_CONFIG_HOME/mozc` または `~/.config/mozc`）を使います。Mozc はプロファイルディレクトリをプロセス単位で保持するため、1 つのプロセスで開くプロファイルは 1 つだけにしてください。drop してから開き直すのは問題ありません。`incognito` を `true` にして開くと、何も学習せず、プロファイルにも触れません。
+
+## スレッド
+
+`Mozc` は `Send` かつ `Sync` なので、1 つを複数のスレッドから使えます。呼び出しは順番に処理されます。呼び出しは呼び出し元のスレッドで動き、短い文なら 1 ミリ秒ほどで終わります。
+
+## ライブラリの読み込み
+
+`Mozc::open` は、次の順で最初に見つかったライブラリを読み込みます。
+
+1. 環境変数 `MOZC_FFI_LIBRARY`
+2. 実行ファイルと同じ場所
+3. `download` フィーチャーが置いた場所（`mozc_ffi::DOWNLOADED_LIBRARY`）
+4. システムのライブラリパス
+
+`Mozc::open_with_library` を使うと、パスを直接指定できます。一度読み込んだライブラリは、プロセスが終了するまで読み込まれたままです。`download` フィーチャーが置くのは Cargo のビルドディレクトリなので、プログラムをほかの人に渡すときは、ライブラリを実行ファイルと同じ場所にコピーしてください。
+
+<!-- --8<-- [end:guide] -->
+
+## API リファレンス
+
+[API リファレンス](https://docs.rs/mozc-ffi)は docs.rs にあり、クレートのドキュメントコメント（英語）から生成されています。
+
+## 関連情報
+
+- [ドキュメント](https://mozc-ffi.readthedocs.io/stable/ja/rust/)
+- [ほかの言語と、ライブラリを自分でビルドする方法](https://github.com/Malorn44/mozc-ffi/blob/main/README.ja.md)
+- [変更履歴](https://github.com/Malorn44/mozc-ffi/blob/main/CHANGELOG.md)
+
+BSD-3-Clause です。ライブラリには Mozc とその辞書が含まれており、それらのライセンスは [THIRD_PARTY_NOTICES.md](https://github.com/Malorn44/mozc-ffi/blob/main/THIRD_PARTY_NOTICES.md) に記載しています。

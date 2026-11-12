@@ -16,7 +16,9 @@
         { "type": "json", "path": "bindings/unity/package.json", "jsonpath": "$.version" },
         { "type": "json", "path": "bindings/node/package-lock.json", "jsonpath": "$.version" },
         { "type": "json", "path": "bindings/node/package-lock.json", "jsonpath": "$.packages[''].version" },
-        { "type": "xml", "path": "bindings/csharp/MozcFfi.csproj", "xpath": "//Project/PropertyGroup/Version" }
+        { "type": "xml", "path": "bindings/csharp/MozcFfi.csproj", "xpath": "//Project/PropertyGroup/Version" },
+        { "type": "generic", "path": "bindings/unity/README.md" },
+        { "type": "generic", "path": "bindings/unity/README.ja.md" }
       ]
     }
   }
