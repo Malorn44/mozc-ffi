@@ -2,6 +2,8 @@
 
 [English](https://github.com/Malorn44/mozc-ffi/blob/main/bindings/unity/README.md) | 日本語
 
+<!-- --8<-- [start:guide] -->
+
 Google 製のオープンソース日本語かな漢字変換エンジン [Mozc](https://github.com/google/mozc) の C# バインディングを、ネイティブライブラリと一緒に Unity パッケージにしたものです。Mozc は辞書を内蔵した状態でアプリと同じプロセス内で動作するため、`mozc_server` も IPC もインストールも不要です。非公式のもので、Google とは提携関係にありません。
 
 ## インストール
@@ -70,6 +72,8 @@ public class Converter : MonoBehaviour
 プロファイルディレクトリには Mozc が学習した内容が保存され、存在しなければ作成されます。Mozc はプロファイルディレクトリをプロセス単位で保持しますが、Editor ではそのプロセスが Play モードをまたいで動き続けます。毎回同じプロファイルを開き、停止するときに `Mozc` を破棄してください。`new Mozc(path, incognito: true)` は何も学習せず、プロファイルにも触れません。
 
 1 つの `Mozc` は複数のスレッドから使えます。呼び出しは順番に処理されます。
+
+<!-- --8<-- [end:guide] -->
 
 ## 関連情報
 

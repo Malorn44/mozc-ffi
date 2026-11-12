@@ -2,6 +2,8 @@
 
 [English](https://github.com/Malorn44/mozc-ffi/blob/main/bindings/python/README.md) | 日本語
 
+<!-- --8<-- [start:guide] -->
+
 Google 製のオープンソース日本語かな漢字変換エンジン [Mozc](https://github.com/google/mozc) を Python から使うためのバインディングです。Mozc は辞書を内蔵した状態でアプリと同じプロセス内で動作するため、`mozc_server` も IPC もインストールも不要です。非公式のもので、Google とは提携関係にありません。
 
 ## インストール
@@ -64,6 +66,8 @@ with Mozc("/path/to/profile") as mozc:
 4. システムのライブラリパス
 
 一度読み込んだライブラリは、プロセスが終了するまで読み込まれたままです。
+
+<!-- --8<-- [end:guide] -->
 
 ## 関連情報
 

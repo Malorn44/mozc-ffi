@@ -2,6 +2,8 @@
 
 [English](https://github.com/Malorn44/mozc-ffi/blob/main/bindings/rust/README.md) | 日本語
 
+<!-- --8<-- [start:guide] -->
+
 Google 製のオープンソース日本語かな漢字変換エンジン [Mozc](https://github.com/google/mozc) を Rust から使うためのバインディングです。Mozc は辞書を内蔵した状態でアプリと同じプロセス内で動作するため、`mozc_server` も IPC もインストールも不要です。非公式のもので、Google とは提携関係にありません。
 
 ## インストール
@@ -76,6 +78,8 @@ fn main() -> Result<(), mozc_ffi::Error> {
 `Mozc::open_with_library` を使うと、パスを直接指定できます。一度読み込んだライブラリは、プロセスが終了するまで読み込まれたままです。
 
 プログラムを配布するときは、ライブラリ（`libmozc_ffi.so` または `mozc_ffi.dll`）を実行ファイルと同じ場所にコピーしてください。`download` フィーチャーを使った場合、その場所は `mozc_ffi::DOWNLOADED_LIBRARY` で分かります。
+
+<!-- --8<-- [end:guide] -->
 
 ## 関連情報
 

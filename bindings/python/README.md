@@ -2,6 +2,8 @@
 
 English | [日本語](https://github.com/Malorn44/mozc-ffi/blob/main/bindings/python/README.ja.md)
 
+<!-- --8<-- [start:guide] -->
+
 Python bindings for [Mozc](https://github.com/google/mozc), Google's open-source Japanese kana-kanji converter.
 Mozc runs inside your process, with its dictionary built in: no `mozc_server`, no IPC, no install. Unofficial and
 not affiliated with Google.
@@ -72,6 +74,8 @@ One `Mozc` can be shared between threads: calls on it take turns.
 4. the system's library path.
 
 It stays loaded until the process exits.
+
+<!-- --8<-- [end:guide] -->
 
 ## More
 

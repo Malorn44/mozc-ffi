@@ -31,7 +31,9 @@ with Mozc("/path/to/profile") as mozc:
 
 ## C
 
-アーカイブには、ヘッダー、ライブラリ、そして Windows 用にはインポートライブラリが入っています。チェックサムは `SHA256SUMS` にあります。すべての関数の説明は [`mozc_ffi.h`](core/mozc_ffi.h) にあります。
+<!-- --8<-- [start:c] -->
+
+アーカイブには、ヘッダー、ライブラリ、そして Windows 用にはインポートライブラリが入っています。チェックサムは `SHA256SUMS` にあります。すべての関数の説明は [`mozc_ffi.h`](https://github.com/Malorn44/mozc-ffi/blob/main/core/mozc_ffi.h) にあります。
 
 ```c
 #include <stdio.h>
@@ -61,6 +63,8 @@ LD_LIBRARY_PATH=lib ./example
 ```
 
 文字列はすべて UTF-8 です。結果の文字列は `mozc_ffi_result_free` を呼ぶまで有効です。1 つのハンドルは複数のスレッドから使え、呼び出しは順番に処理されます。
+
+<!-- --8<-- [end:c] -->
 
 ## リポジトリ
 

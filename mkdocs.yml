@@ -1,0 +1,74 @@
+# The documentation site, https://malorn44.github.io/mozc-ffi/. Built by scripts/check.sh lint docs into
+# build/site, and published from main by ci.yml's docs-publish job.
+#
+# Each language's page includes the "guide" section of that binding's README, so the site, the
+# registries and GitHub say the same. Pages come in English (name.md) and Japanese (name.ja.md, under /ja/).
+site_name: mozc-ffi
+site_url: https://malorn44.github.io/mozc-ffi/
+site_description: Unofficial C API and bindings for Google's Mozc Japanese kana-kanji converter, in process
+repo_url: https://github.com/Malorn44/mozc-ffi
+repo_name: Malorn44/mozc-ffi
+edit_uri: ""
+copyright: BSD-3-Clause. Not affiliated with Google.
+
+theme:
+  name: material
+  features:
+    - content.code.copy
+    - navigation.sections
+    - search.highlight
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      toggle: { icon: material/weather-night, name: Dark }
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      toggle: { icon: material/weather-sunny, name: Light }
+
+nav:
+  - index.md
+  - concepts.md
+  - Languages:
+      - python.md
+      - csharp.md
+      - unity.md
+      - node.md
+      - rust.md
+      - c.md
+
+plugins:
+  - search
+  - i18n:
+      docs_structure: suffix
+      languages:
+        - locale: en
+          name: English
+          default: true
+          build: true
+        - locale: ja
+          name: 日本語
+          build: true
+          nav_translations:
+            Languages: 言語
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: [bindings/python]
+          options:
+            show_root_heading: false
+            show_source: false
+            members_order: source
+            heading_level: 3
+
+markdown_extensions:
+  - admonition
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.highlight
+  - pymdownx.superfences
+  - pymdownx.snippets:
+      base_path: [.]
+      check_paths: true

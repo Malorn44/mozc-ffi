@@ -2,6 +2,8 @@
 
 English | [日本語](https://github.com/Malorn44/mozc-ffi/blob/main/bindings/csharp/README.ja.md)
 
+<!-- --8<-- [start:guide] -->
+
 C# bindings for [Mozc](https://github.com/google/mozc), Google's open-source Japanese kana-kanji converter. Mozc
 runs inside your process, with its dictionary built in: no `mozc_server`, no IPC, no install. Unofficial and not
 affiliated with Google.
@@ -74,6 +76,8 @@ One `Mozc` can be shared between threads: calls on it take turns.
 The bindings load `mozc_ffi` through P/Invoke. The package puts each platform's library under `runtimes/`, and
 .NET loads the one for the machine. Elsewhere, put `mozc_ffi.dll` or `libmozc_ffi.so` next to your program or on
 the system's library path. The C# bindings don't read `MOZC_FFI_LIBRARY`.
+
+<!-- --8<-- [end:guide] -->
 
 ## More
 

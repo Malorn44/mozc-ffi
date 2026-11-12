@@ -2,6 +2,8 @@
 
 English | [日本語](https://github.com/Malorn44/mozc-ffi/blob/main/bindings/rust/README.ja.md)
 
+<!-- --8<-- [start:guide] -->
+
 Rust bindings for [Mozc](https://github.com/google/mozc), Google's open-source Japanese kana-kanji converter. Mozc
 runs inside your process, with its dictionary built in: no `mozc_server`, no IPC, no install. Unofficial and not
 affiliated with Google.
@@ -87,6 +89,8 @@ set to `true` learns nothing and leaves the profile untouched.
 
 To ship your program, copy the library (`libmozc_ffi.so` or `mozc_ffi.dll`) next to your executable. With the
 `download` feature, `mozc_ffi::DOWNLOADED_LIBRARY` says where it is.
+
+<!-- --8<-- [end:guide] -->
 
 ## More
 

@@ -2,6 +2,8 @@
 
 [English](https://github.com/Malorn44/mozc-ffi/blob/main/bindings/csharp/README.md) | 日本語
 
+<!-- --8<-- [start:guide] -->
+
 Google 製のオープンソース日本語かな漢字変換エンジン [Mozc](https://github.com/google/mozc) を C# から使うためのバインディングです。Mozc は辞書を内蔵した状態でアプリと同じプロセス内で動作するため、`mozc_server` も IPC もインストールも不要です。非公式のもので、Google とは提携関係にありません。
 
 ## インストール
@@ -62,6 +64,8 @@ Console.WriteLine(string.Join(", ", mozc.Predict("ありがと").Take(2)));  // 
 ## ライブラリの読み込み
 
 バインディングは P/Invoke で `mozc_ffi` を読み込みます。パッケージは各環境のライブラリを `runtimes/` に入れており、.NET がマシンに合うものを読み込みます。それ以外の環境では、`mozc_ffi.dll` または `libmozc_ffi.so` をプログラムと同じ場所か、システムのライブラリパスに置いてください。C# バインディングは `MOZC_FFI_LIBRARY` を読みません。
+
+<!-- --8<-- [end:guide] -->
 
 ## 関連情報
 

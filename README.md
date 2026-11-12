@@ -37,8 +37,10 @@ directory per process, so open one profile per process. `incognito` learns nothi
 
 ## C
 
+<!-- --8<-- [start:c] -->
+
 The archives hold the header, the library and, on Windows, the import library. `SHA256SUMS` lists their checksums.
-[`mozc_ffi.h`](core/mozc_ffi.h) documents every function.
+[`mozc_ffi.h`](https://github.com/Malorn44/mozc-ffi/blob/main/core/mozc_ffi.h) documents every function.
 
 ```c
 #include <stdio.h>
@@ -69,6 +71,8 @@ LD_LIBRARY_PATH=lib ./example
 
 Strings are UTF-8. A result's strings stay valid until `mozc_ffi_result_free`. One handle may be used from several
 threads; calls on it are serialized.
+
+<!-- --8<-- [end:c] -->
 
 ## Repository
 

@@ -2,6 +2,8 @@
 
 English | [日本語](https://github.com/Malorn44/mozc-ffi/blob/main/bindings/unity/README.ja.md)
 
+<!-- --8<-- [start:guide] -->
+
 The C# bindings for [Mozc](https://github.com/google/mozc), Google's open-source Japanese kana-kanji converter, as
 a Unity package with the native library. Mozc runs inside your app, with its dictionary built in: no
 `mozc_server`, no IPC, no install. Unofficial and not affiliated with Google.
@@ -81,6 +83,8 @@ process, and in the Editor that process lives on across Play mode: open the same
 the `Mozc` when you stop. `new Mozc(path, incognito: true)` learns nothing and leaves the profile untouched.
 
 One `Mozc` can be shared between threads: calls on it take turns.
+
+<!-- --8<-- [end:guide] -->
 
 ## More
 
