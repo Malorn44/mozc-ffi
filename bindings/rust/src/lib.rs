@@ -2,22 +2,24 @@
 //!
 //! ```no_run
 //! let mozc = mozc_ffi::Mozc::open(Some(std::path::Path::new("/path/to/profile")), false)?;
-//! let segments = mozc.convert("ここではきものをぬぐ", &[3, 5, 2], ""); // fixed lengths, in characters
-//! let completions = mozc.predict("ありがと", "");
-//! mozc.learn("かんじ", &[3], &["感じ"], ""); // 感じ ranks first next time
+//! let segments = mozc.convert("きょうはさむいですね", &[], ""); // 今日は / 寒いですね
+//! let segments = mozc.convert("ここではきものをぬぐ", &[3, 5, 2], ""); // ここで / はきものを / ぬぐ
+//! mozc.learn("ここではきものをぬぐ", &[3, 5, 2], &["ここで", "履物を", "脱ぐ"], ""); // ranks first next time
+//! let completions = mozc.predict("ありがと", ""); // ありがとうございます, ありがとう, …
 //! # Ok::<(), mozc_ffi::Error>(())
 //! ```
 //!
 //! The native library (`mozc_ffi.dll`, `libmozc_ffi.so`) is loaded when a `Mozc` opens: from the
 //! `MOZC_FFI_LIBRARY` environment variable, next to the executable, where the `download` feature
-//! put it, or the system's library path.
+//! put it ([`DOWNLOADED_LIBRARY`]), or the system's library path.
 //!
 //! The crate holds no native library. Either enable the `download` feature, which fetches this
 //! version's library from its GitHub release when building and checks its SHA-256, or download
-//! the release archive yourself. To ship your program, copy the library ([`DOWNLOADED_LIBRARY`])
-//! next to your executable.
-//! Every call is self-contained. Mozc keeps the profile directory per process, so open one
-//! profile per process.
+//! the release archive yourself. Every call is self-contained. Mozc keeps the profile directory
+//! per process, so open one profile per process.
+//!
+//! The [guide](https://mozc-ffi.readthedocs.io/stable/rust/) covers installing, the calls,
+//! profiles and errors.
 
 use std::ffi::{c_char, c_void, CStr, CString};
 use std::fmt;

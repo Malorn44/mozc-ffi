@@ -5,12 +5,12 @@ edition = "2021"
 rust-version = "1.88"
 license = "BSD-3-Clause"
 repository = "https://github.com/Malorn44/mozc-ffi"
-readme = "../../README.md"
+readme = "README.md"
 description = "Unofficial Rust bindings for Google's Mozc kana-kanji converter, in process"
 keywords = ["japanese", "mozc", "ime", "kana-kanji"]
 categories = ["text-processing", "api-bindings"]
 # SHA256SUMS (the release archives' checksums) is added when the crate is published.
-include = ["src/**", "build.rs", "SHA256SUMS"]
+include = ["src/**", "build.rs", "README.md", "SHA256SUMS"]
 
 [features]
 # Fetch this version's native library from its GitHub release when building. Needs curl and tar.
