@@ -9,7 +9,7 @@ readme = "../../README.md"
 description = "Unofficial Rust bindings for Google's Mozc kana-kanji converter, in process"
 keywords = ["japanese", "mozc", "ime", "kana-kanji"]
 categories = ["text-processing", "api-bindings"]
-homepage = "https://malorn44.github.io/mozc-ffi/rust/"
+homepage = "https://mozc-ffi.readthedocs.io/stable/rust/"
 documentation = "https://docs.rs/mozc-ffi"
 # SHA256SUMS (the release archives' checksums) is added when the crate is published.
 include = ["src/**", "build.rs", "SHA256SUMS"]

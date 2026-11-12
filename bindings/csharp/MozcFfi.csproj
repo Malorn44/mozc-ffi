@@ -10,7 +10,7 @@
     <Authors>Mara Schwartz</Authors>
     <PackageTags>japanese;mozc;ime;kana-kanji</PackageTags>
     <RepositoryUrl>https://github.com/Malorn44/mozc-ffi</RepositoryUrl>
-    <PackageProjectUrl>https://malorn44.github.io/mozc-ffi/csharp/</PackageProjectUrl>
+    <PackageProjectUrl>https://mozc-ffi.readthedocs.io/stable/csharp/</PackageProjectUrl>
     <PackageReleaseNotes>https://github.com/Malorn44/mozc-ffi/blob/main/CHANGELOG.md</PackageReleaseNotes>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <!-- MozcFfi.xml, packed beside MozcFfi.dll, so editors show the doc comments. -->
