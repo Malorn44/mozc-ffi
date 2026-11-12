@@ -62,7 +62,7 @@ namespace MozcFfi
                 throw new MozcException("mozc_ffi_open failed: " + Reason());
         }
 
-        /// <summary>Mozc's version, such as "2.32.5994.102".</summary>
+        /// <summary>Mozc's version, such as "3.35.6354.102".</summary>
         public static string MozcVersion => FromUtf8(Native.mozc_ffi_mozc_version());
 
         /// <summary>Why the last Convert, Predict, Learn, ClearLearning or Flush failed; "" if it succeeded.</summary>
