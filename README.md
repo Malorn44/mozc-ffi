@@ -26,7 +26,7 @@ Each package comes with the library already built, for Linux x64 and arm64 (glib
 
 | | Install | Needs |
 |---|---|---|
-| Python | `pip install mozc-ffi` | Python 3.11+ |
+| Python | `pip install mozc-ffi` | Python 3.10+ |
 | C# | `dotnet add package MozcFfi` | .NET Standard 2.0 |
 | Unity | The `com.malorn44.mozc-ffi` package (below) | Unity 2021.3+, Windows or Linux x64 |
 | Node.js | `npm install mozc-ffi` | Node.js 22+ |

@@ -23,7 +23,7 @@ Google 製のオープンソース日本語かな漢字変換エンジン [Mozc]
 
 | | インストール | 必要なもの |
 |---|---|---|
-| Python | `pip install mozc-ffi` | Python 3.11 以降 |
+| Python | `pip install mozc-ffi` | Python 3.10 以降 |
 | C# | `dotnet add package MozcFfi` | .NET Standard 2.0 |
 | Unity | `com.malorn44.mozc-ffi` パッケージ（下記） | Unity 2021.3 以降、Windows または Linux の x64 |
 | Node.js | `npm install mozc-ffi` | Node.js 22 以降 |
