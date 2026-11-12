@@ -2,6 +2,8 @@
 
 [English](https://github.com/Malorn44/mozc-ffi/blob/main/bindings/python/README.md) | 日本語
 
+<!-- --8<-- [start:guide] -->
+
 Google 製のオープンソース日本語かな漢字変換エンジン [Mozc](https://github.com/google/mozc) を Python から使うためのバインディングです。Mozc は辞書を内蔵した状態でアプリと同じプロセス内で動作するため、`mozc_server` も IPC もインストールも不要です。非公式のもので、Google とは提携関係にありません。
 
 ## インストール
@@ -10,9 +12,13 @@ Google 製のオープンソース日本語かな漢字変換エンジン [Mozc]
 pip install mozc-ffi
 ```
 
-Python 3.11 以降が必要です。対応環境は Linux x64 と arm64（glibc 2.28 以降）、Windows x64 です。どの wheel にもライブラリが入っているので、ほかにインストールするものはありません。
+Python 3.11 以降が必要です。どの wheel にもライブラリが入っているので、ほかにインストールするものはありません。
 
-## 使い方
+## 対応環境
+
+Linux x64 と arm64（glibc 2.28 以降）、Windows x64 です。macOS や Alpine Linux（musl）など、ほかの環境向けの wheel はありません。
+
+## 使用例
 
 ```python
 from mozc_ffi import Mozc
@@ -32,27 +38,39 @@ with Mozc("/path/to/profile") as mozc:
     print(mozc.predict("ありがと")[:2])  # ['ありがとうございます', 'ありがとう']
 ```
 
+出力は新しいプロファイルでのものです。学習が進むと、最初の候補はユーザーの選択に沿って変わります。
+
+## 呼び出し一覧
+
 呼び出しはそれぞれ独立しています。ひらがなの読みと、必要に応じて文節の長さと直前の文を渡すと、文節ごとの候補が返ってきます。Mozc と同期させておく状態はありません。
 
 | | |
 |---|---|
+| `Mozc(profile_dir=None, *, incognito=False, library=None)` | Mozc を開きます。`with` ブロックで使うか、`close()` を呼んでください。 |
 | `convert(reading, lengths=None, context="")` | `Segment(reading, candidates, descriptions)` のリスト。候補は良い順です。`lengths` で文節の区切りを指定でき、省略すると Mozc が決めます。`context` は読みの直前の文で、最初の文節の変換の助けになります。 |
 | `predict(reading, context="")` | 入力途中の読みの補完候補。良い順です。 |
-| `learn(reading, lengths, texts, context="")` | 文節 `i` で `texts[i]` が選ばれたことを学習し、次回から先頭に並べます。候補にないテキストがあると `False` を返し、何も学習しません。 |
+| `learn(reading, lengths, texts, context="")` | 文節 `i` で `texts[i]` が選ばれたことを学習し、次回から先頭に並べます。 |
 | `clear_learning()` | 学習した内容をすべて消します。 |
 | `flush()` | 学習した内容をすぐにプロファイルへ書き込みます。閉じるときにも書き込まれます。 |
-| `last_error` | 直前の呼び出しが失敗した理由（英語）。成功していれば `""`。入力された文字列は含みません。 |
+| `close()` | 学習した内容を保存し、エンジンを解放します。 |
+| `last_error` | 直前の呼び出しが失敗した理由。成功していれば `""`。 |
 | `mozc_version` | Mozc のバージョン（例: `"2.32.5994.102"`）。 |
 
 文節の長さはバイト数ではなく Unicode の文字数で数え、合計が読みの長さと一致する必要があります。`descriptions` には各候補についての Mozc の注記（例: `カタカナ`）が日本語で入り、注記がなければ `""` です。
 
-要求どおりに処理できなかった呼び出しは `[]` または `False` を返し、理由は `last_error` で分かります。ライブラリを読み込めない場合や Mozc を起動できない場合、`Mozc(...)` は `MozcError` を送出します。
+## エラー
+
+要求どおりに処理できなかった呼び出しは `[]` または `False` を返し、理由は `last_error` で「the segment lengths do not add up to the reading's length」のような英語の文として分かります。入力された文字列が含まれることはありません。候補にないテキストがあると、`learn` は `False` を返し、何も学習しません。
+
+ライブラリを読み込めない場合、C API のバージョンが異なる場合、Mozc を起動できない場合、`Mozc(...)` は `MozcError` を送出します。
 
 ## プロファイル
 
-プロファイルディレクトリには Mozc が学習した内容が保存され、存在しなければ作成されます。ディレクトリを指定しない `Mozc()` は Mozc の既定の場所（Linux では `~/.mozc`）を使います。Mozc はプロファイルディレクトリをプロセス単位で保持するため、1 つのプロセスで開くプロファイルは 1 つだけにしてください。`Mozc(path, incognito=True)` は何も学習せず、プロファイルにも触れません。
+プロファイルディレクトリには Mozc が学習した内容が保存され、存在しなければ作成されます。ディレクトリを指定しない `Mozc()` は Mozc の既定の場所（Linux では `~/.mozc`）を使います。Mozc はプロファイルディレクトリをプロセス単位で保持するため、1 つのプロセスで開くプロファイルは 1 つだけにしてください。閉じてから開き直すのは問題ありません。`Mozc(path, incognito=True)` は何も学習せず、プロファイルにも触れません。
 
-1 つの `Mozc` は複数のスレッドから使えます。呼び出しは順番に処理されます。
+## スレッド
+
+1 つの `Mozc` は複数のスレッドから使えます。呼び出しは順番に処理されます。呼び出しは呼び出し元のスレッドで動き、短い文なら 1 ミリ秒ほどで終わります。
 
 ## ライブラリの読み込み
 
@@ -65,9 +83,15 @@ with Mozc("/path/to/profile") as mozc:
 
 一度読み込んだライブラリは、プロセスが終了するまで読み込まれたままです。
 
+<!-- --8<-- [end:guide] -->
+
+## API リファレンス
+
+すべてのクラスとメソッドは、docstring から生成した [API リファレンス](https://mozc-ffi.readthedocs.io/stable/ja/python/#api-reference)（英語）にあります。エディターにも同じ docstring が表示され、パッケージには型情報が付いています。
+
 ## 関連情報
 
-- [ドキュメント](https://malorn44.github.io/mozc-ffi/ja/python/)
+- [ドキュメント](https://mozc-ffi.readthedocs.io/stable/ja/python/)
 - [ほかの言語と、ライブラリを自分でビルドする方法](https://github.com/Malorn44/mozc-ffi/blob/main/README.ja.md)
 - [変更履歴](https://github.com/Malorn44/mozc-ffi/blob/main/CHANGELOG.md)
 
