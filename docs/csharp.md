@@ -4,6 +4,6 @@
 
 ## API reference {#api-reference}
 
-Every public type and member, with the doc comments the package carries in `MozcFfi.xml`.
-
-<!-- csharp-api -->
+The bindings are one source file,
+[`MozcFfi.cs`](https://github.com/Malorn44/mozc-ffi/blob/main/bindings/csharp/MozcFfi.cs), with doc comments on its
+calls. The package carries the same comments in `MozcFfi.xml`, so your editor shows them.

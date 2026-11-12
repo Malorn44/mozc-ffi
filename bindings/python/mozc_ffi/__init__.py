@@ -105,7 +105,7 @@ class Mozc:
 
     @property
     def mozc_version(self) -> str:
-        """Mozc's version, such as "2.32.5994.102"."""
+        """Mozc's version, such as "3.35.6354.102"."""
         return self._lib.mozc_ffi_mozc_version().decode("utf-8")
 
     @property

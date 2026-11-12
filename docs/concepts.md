@@ -47,7 +47,8 @@ too.
 ## Profiles
 
 A profile is the directory where Mozc keeps what it learns. It is created if missing, and no directory means
-Mozc's default (`~/.mozc` on Linux).
+Mozc's default (on Linux `~/.mozc` if it exists, otherwise `$XDG_CONFIG_HOME/mozc` or `~/.config/mozc`). The
+default is the profile an installed Mozc uses too, so pass a directory to keep your app's learning apart.
 
 Mozc keeps the profile directory per process, so open one profile per process. Closing and opening the same
 profile again is fine.
@@ -56,9 +57,9 @@ Incognito mode learns nothing and leaves the profile untouched, for text that sh
 
 ## Errors
 
-A call that can't do what was asked returns nothing: an empty list, or false. `last_error` then says why, in
-English, such as "the segment lengths do not add up to the reading's length". It is a fixed sentence and never
-quotes what was typed, and the library never logs readings or learning data.
+A call that can't do what was asked returns an empty list or false (`NULL` or `0` in C). `last_error` then says
+why, in English, such as "the segment lengths do not add up to the reading's length". It is a fixed sentence and
+never quotes what was typed, and the library never logs readings or learning data.
 
 Opening fails, with an exception or an error value depending on the language, when the library can't be loaded,
 speaks another version of the C API, or Mozc can't start.
@@ -66,19 +67,3 @@ speaks another version of the C API, or Mozc can't start.
 ## Threads
 
 One handle may be used from several threads; calls on it are serialized.
-
-## The library
-
-Every binding loads the same native library, `libmozc_ffi.so` or `mozc_ffi.dll`, once, and never unloads it:
-
-| | Where it looks |
-|---|---|
-| Python | `library=`, `MOZC_FFI_LIBRARY`, next to the module (the wheel puts it there), the system's path |
-| C# | P/Invoke: the package's `runtimes/` for the machine, next to the program, the system's path |
-| Unity | The package's plugin for Windows x64 or Linux x64 |
-| Node.js | `MOZC_FFI_LIBRARY`, the `@mozc-ffi/<platform>-<arch>` package, the system's path |
-| Rust | `MOZC_FFI_LIBRARY`, next to the executable, where the `download` feature put it, the system's path |
-| C | Whatever you link against |
-
-Prebuilt libraries cover Linux x64 and arm64 with glibc 2.28 or later, and Windows x64. The Windows DLL links the
-C++ runtime statically, so it needs no Visual C++ Redistributable.

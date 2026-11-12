@@ -64,13 +64,8 @@ plugins:
             members_order: source
             heading_level: 3
 
-hooks:
-  - scripts/docs_hooks.py
-
 # What the pages include from outside docs/, so mkdocs serve rebuilds when they change.
 watch:
-  - README.md
-  - README.ja.md
   - core/README.md
   - core/README.ja.md
   - core/mozc_ffi.h
@@ -79,7 +74,6 @@ watch:
   - bindings/python/mozc_ffi
   - bindings/csharp/README.md
   - bindings/csharp/README.ja.md
-  - bindings/csharp/MozcFfi.cs
   - bindings/unity/README.md
   - bindings/unity/README.ja.md
   - bindings/node/README.md
@@ -87,12 +81,9 @@ watch:
   - bindings/node/index.d.ts
   - bindings/rust/README.md
   - bindings/rust/README.ja.md
-  - scripts/docs_hooks.py
 
 markdown_extensions:
-  - admonition
   - attr_list
-  - tables
   - toc:
       permalink: true
   - pymdownx.highlight

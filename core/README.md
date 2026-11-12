@@ -89,7 +89,7 @@ are UTF-8.
 | `mozc_ffi_clear_learning(mozc)` | Forgets everything learned. |
 | `mozc_ffi_flush(mozc)` | Writes what was learned to the profile now. Closing does it too. |
 | `mozc_ffi_last_error()` | Why the last call on this thread failed, or `""`. |
-| `mozc_ffi_mozc_version()`, `mozc_ffi_abi_version()` | Mozc's version, such as `"2.32.5994.102"`, and the C API's, which must equal `MOZC_FFI_ABI_VERSION`. |
+| `mozc_ffi_mozc_version()`, `mozc_ffi_abi_version()` | Mozc's version, such as `"3.35.6354.102"`, and the C API's, which must equal `MOZC_FFI_ABI_VERSION`. |
 
 Segment lengths count Unicode characters, not bytes, and add up to the reading's length. A candidate's
 description is Mozc's note on it in Japanese, such as `カタカナ`, or `""`.
@@ -106,9 +106,10 @@ isn't a candidate of its segment.
 
 ## Profiles
 
-The profile directory holds what Mozc learns and is created if missing. `NULL` or `""` uses Mozc's default
-(`~/.mozc` on Linux). Mozc keeps the profile directory per process, so open one profile per process; closing it
-and opening it again is fine. `MOZC_FFI_INCOGNITO` learns nothing and leaves the profile untouched.
+The profile directory holds what Mozc learns and is created if missing. `NULL` or `""` uses Mozc's default (on
+Linux `~/.mozc` if it exists, otherwise `$XDG_CONFIG_HOME/mozc` or `~/.config/mozc`). Mozc keeps the profile
+directory per process, so open one profile per process; closing it and opening it again is fine.
+`MOZC_FFI_INCOGNITO` learns nothing and leaves the profile untouched.
 
 ## Threads
 

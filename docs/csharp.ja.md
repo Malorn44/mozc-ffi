@@ -4,6 +4,4 @@
 
 ## API リファレンス {#api-reference}
 
-すべての公開型とメンバーを、パッケージの `MozcFfi.xml` に入っているドキュメントコメント（英語）とともに示します。
-
-<!-- csharp-api -->
+バインディングは 1 つのソースファイル [`MozcFfi.cs`](https://github.com/Malorn44/mozc-ffi/blob/main/bindings/csharp/MozcFfi.cs) で、各呼び出しにドキュメントコメント（英語）が付いています。同じコメントがパッケージの `MozcFfi.xml` にも入っているので、エディターにも表示されます。

@@ -4,4 +4,4 @@
 
 ## API リファレンス {#api-reference}
 
-Unity パッケージのバインディングは C# バインディングそのもの（ソース）なので、[C# の API リファレンス](csharp.md#api-reference)がそのまま当てはまります。
+Unity パッケージには C# バインディングがソース（`Runtime/MozcFfi.cs`）として入っており、各呼び出しにドキュメントコメント（英語）が付いているので、エディターに表示されます。同じファイルはリポジトリの [`MozcFfi.cs`](https://github.com/Malorn44/mozc-ffi/blob/main/bindings/csharp/MozcFfi.cs) です。

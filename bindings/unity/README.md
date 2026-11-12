@@ -85,7 +85,7 @@ just before it, and get back segments with candidates. There is no state to keep
 | `Flush()` | Writes what was learned to the profile now. `Dispose()` does it too. |
 | `Dispose()` | Saves what was learned and frees the engine. |
 | `LastError` | Why the last call failed, or `""`. |
-| `Mozc.MozcVersion` | Mozc's version, such as `"2.32.5994.102"`. |
+| `Mozc.MozcVersion` | Mozc's version, such as `"3.35.6354.102"`. |
 
 Segment lengths count Unicode characters, not UTF-16 code units, and add up to the reading's length.
 `Descriptions` has Mozc's note on each candidate in Japanese, such as `カタカナ`, or `""`.
@@ -122,8 +122,7 @@ it into the player. The bindings don't read `MOZC_FFI_LIBRARY`.
 ## API reference
 
 The bindings are the same as the NuGet package's, and come as source (`Runtime/MozcFfi.cs`), so your editor shows
-their doc comments. The [C# API reference](https://mozc-ffi.readthedocs.io/stable/csharp/#api-reference) lists
-them.
+their doc comments.
 
 ## More
 
