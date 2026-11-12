@@ -44,6 +44,7 @@ and each language's README has the same guide.
 | `bindings/node/` | Node.js bindings (koffi, with TypeScript types), their README and tests |
 | `scripts/` | The build scripts, `check.sh` (every lint check and test), the pinned Mozc commit (`MOZC_COMMIT`) |
 | `tests/` | `chat.tsv`, everyday chat sentences used by every test suite, and `smoke.c`, a C program using the API |
+| `docs/`, `mkdocs.yml` | The [documentation site](https://mozc-ffi.readthedocs.io/stable/), built by Read the Docs (`.readthedocs.yaml`). Each language's page includes its README |
 
 Each package's README is the one in its `bindings/` directory, and is what PyPI, NuGet, npm and crates.io show.
 
@@ -72,7 +73,7 @@ The DLL links the C++ runtime statically, so it needs no Visual C++ Redistributa
 
 ```sh
 scripts/check.sh              # every lint check, then every test
-scripts/check.sh lint python  # one lint check: c, python, csharp, rust, node, scripts
+scripts/check.sh lint python  # one lint check: c, python, csharp, rust, node, scripts, docs
 scripts/check.sh test rust    # one binding's tests: c, csharp, python, node, rust
 ```
 

@@ -38,7 +38,7 @@ MOZC_FFI_API int32_t mozc_ffi_abi_version(void);
  * process. */
 MOZC_FFI_API const char* mozc_ffi_last_error(void);
 
-/* Mozc's version, such as "2.32.5994.102". */
+/* Mozc's version, such as "3.35.6354.102". */
 MOZC_FFI_API const char* mozc_ffi_mozc_version(void);
 
 typedef struct mozc_ffi mozc_ffi;
@@ -48,7 +48,8 @@ typedef struct mozc_ffi_result mozc_ffi_result;
 #define MOZC_FFI_INCOGNITO 1
 
 /* profile_dir holds what Mozc learns; it is created if missing. NULL or ""
- * uses Mozc's default (~/.mozc on Linux). The dictionary is built in.
+ * uses Mozc's default (on Linux ~/.mozc if it exists, otherwise
+ * $XDG_CONFIG_HOME/mozc or ~/.config/mozc). The dictionary is built in.
  * Returns NULL on failure (see mozc_ffi_last_error). */
 MOZC_FFI_API mozc_ffi* mozc_ffi_open(const char* profile_dir, int32_t flags);
 /* Saves what was learned and frees the handle. */

@@ -15,7 +15,7 @@ export class Mozc {
    * @param options.incognito learn nothing and leave the profile untouched
    */
   constructor(profileDir?: string | null, options?: { incognito?: boolean });
-  /** Mozc's version, such as "2.32.5994.102". */
+  /** Mozc's version, such as "3.35.6354.102". */
   static readonly mozcVersion: string;
   /** Why the last convert, predict, learn, clearLearning or flush failed; '' if it succeeded. */
   readonly lastError: string;

@@ -2,13 +2,14 @@
 # Runs the checks CI runs, with the same commands.
 #
 #   scripts/check.sh                    every lint check, then every test
-#   scripts/check.sh lint [NAME...]     c, python, csharp, rust, node, scripts
+#   scripts/check.sh lint [NAME...]     c, python, csharp, rust, node, scripts, docs
 #   scripts/check.sh test [NAME...]     c, csharp, python, node, rust, against build/'s library
 #   scripts/check.sh library [--max-glibc X.Y]   what build/'s library exports and needs
 #   scripts/check.sh tools              set up build/venv only (scripts/package.sh uses it)
 #
-# The Python tools (scripts/requirements.txt) go into a venv at build/venv. The
-# other checks need dotnet, cargo, node and a C compiler on PATH.
+# The Python tools (scripts/requirements.txt) go into a venv at build/venv, and the docs site's
+# (scripts/requirements-docs.txt) into build/docs-venv. The other checks need dotnet, cargo, node
+# and a C compiler on PATH.
 set -euo pipefail
 
 scripts=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
@@ -64,6 +65,18 @@ lint_scripts() {
     actionlint
 }
 
+# Builds the docs site into build/site. --strict fails on any warning, such as a broken link or a
+# README section a page includes that isn't there.
+lint_docs() {
+    local docs_bin=build/docs-venv/${venv_bin##*/}
+    if ! cmp -s "$scripts/requirements-docs.txt" build/docs-venv/requirements.txt; then
+        "$python" -m venv build/docs-venv
+        "$docs_bin/python" -m pip install --quiet --disable-pip-version-check -r "$scripts/requirements-docs.txt"
+        cp "$scripts/requirements-docs.txt" build/docs-venv/requirements.txt
+    fi
+    NO_MKDOCS_2_WARNING=1 "$docs_bin/mkdocs" build --strict --site-dir build/site
+}
+
 test_c() {
     mkdir -p build/smoke-profile
     if $windows; then
@@ -108,7 +121,7 @@ run() {  # run <lint|test> <name...>: each name's function, one after another
     done
 }
 
-lints=(c python csharp rust node scripts)
+lints=(c python csharp rust node scripts docs)
 tests=(c csharp python node rust)
 command=${1:-all}
 [ $# -gt 0 ] && shift
@@ -118,5 +131,5 @@ case "$command" in
     library) check_library "$@" ;;
     tools) tools ;;
     all) run lint "${lints[@]}"; run test "${tests[@]}" ;;
-    *) sed -n '2,11p' "$0" >&2; exit 2 ;;
+    *) sed -n '2,12p' "$0" >&2; exit 2 ;;
 esac

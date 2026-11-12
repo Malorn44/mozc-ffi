@@ -62,7 +62,7 @@ just before it, and get back segments with candidates. There is no state to keep
 | `Flush()` | Writes what was learned to the profile now. `Dispose()` does it too. |
 | `Dispose()` | Saves what was learned and frees the engine. |
 | `LastError` | Why the last call failed, or `""`. |
-| `Mozc.MozcVersion` | Mozc's version, such as `"2.32.5994.102"`. |
+| `Mozc.MozcVersion` | Mozc's version, such as `"3.35.6354.102"`. |
 
 Segment lengths count Unicode characters, not UTF-16 code units, and add up to the reading's length.
 `Descriptions` has Mozc's note on each candidate in Japanese, such as `カタカナ`, or `""`.
@@ -79,9 +79,9 @@ as "the segment lengths do not add up to the reading's length". It never quotes 
 ## Profiles
 
 The profile directory holds what Mozc learns and is created if missing. `new Mozc()` with no directory uses Mozc's
-default (`~/.mozc` on Linux). Mozc keeps the profile directory per process, so open one profile per process;
-disposing it and opening it again is fine. `new Mozc(path, incognito: true)` learns nothing and leaves the profile
-untouched.
+default (on Linux `~/.mozc` if it exists, otherwise `$XDG_CONFIG_HOME/mozc` or `~/.config/mozc`). Mozc keeps the
+profile directory per process, so open one profile per process; disposing it and opening it again is fine.
+`new Mozc(path, incognito: true)` learns nothing and leaves the profile untouched.
 
 ## Threads
 
@@ -98,8 +98,8 @@ the system's library path. The C# bindings don't read `MOZC_FFI_LIBRARY`.
 
 ## API reference
 
-The package carries its doc comments (`MozcFfi.xml`), so your editor shows them for every member. The
-[documentation](https://mozc-ffi.readthedocs.io/stable/csharp/#api-reference) lists them too.
+The package carries its doc comments (`MozcFfi.xml`), so your editor shows them. The bindings are one source file,
+[`MozcFfi.cs`](https://github.com/Malorn44/mozc-ffi/blob/main/bindings/csharp/MozcFfi.cs).
 
 ## More
 

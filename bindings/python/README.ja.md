@@ -4,7 +4,7 @@
 
 <!-- --8<-- [start:guide] -->
 
-Google 製のオープンソース日本語かな漢字変換エンジン [Mozc](https://github.com/google/mozc) を Python から使うためのバインディングです。Mozc は辞書を内蔵した状態でアプリと同じプロセス内で動作するため、`mozc_server` も IPC もインストールも不要です。非公式のもので、Google とは提携関係にありません。
+Google 製のオープンソース日本語かな漢字変換エンジン [Mozc](https://github.com/google/mozc) を Python から使うためのバインディングです。Mozc は辞書を内蔵した状態でアプリと同じプロセス内で動作するため、`mozc_server` も IPC も Mozc 本体のインストールも不要です。非公式のもので、Google とは関係ありません。
 
 ## インストール
 
@@ -31,42 +31,42 @@ with Mozc("/path/to/profile") as mozc:
     segments = mozc.convert("ここではきものをぬぐ", [3, 5, 2])
     print(segments[1].candidates[:2])  # ['は着物を', '履物を']
 
-    # ユーザーが送った変換は、次回から先頭に並ぶ
+    # 確定した変換は、次回から第一候補になる
     mozc.learn("ここではきものをぬぐ", [3, 5, 2], ["ここで", "履物を", "脱ぐ"])
     print("".join(s.candidates[0] for s in mozc.convert("ここではきものをぬぐ")))  # ここで履物を脱ぐ
 
     print(mozc.predict("ありがと")[:2])  # ['ありがとうございます', 'ありがとう']
 ```
 
-出力は新しいプロファイルでのものです。学習が進むと、最初の候補はユーザーの選択に沿って変わります。
+出力は新しいプロファイルでのものです。学習が進むと、第一候補はユーザーの選択に沿って変わります。
 
 ## 呼び出し一覧
 
-呼び出しはそれぞれ独立しています。ひらがなの読みと、必要に応じて文節の長さと直前の文を渡すと、文節ごとの候補が返ってきます。Mozc と同期させておく状態はありません。
+呼び出しはそれぞれ独立しています。ひらがなの読みと、必要に応じて文節の長さと直前のテキストを渡すと、文節ごとの候補が返ってきます。Mozc と同期させておく状態はありません。
 
 | | |
 |---|---|
 | `Mozc(profile_dir=None, *, incognito=False, library=None)` | Mozc を開きます。`with` ブロックで使うか、`close()` を呼んでください。 |
-| `convert(reading, lengths=None, context="")` | `Segment(reading, candidates, descriptions)` のリスト。候補は良い順です。`lengths` で文節の区切りを指定でき、省略すると Mozc が決めます。`context` は読みの直前の文で、最初の文節の変換の助けになります。 |
-| `predict(reading, context="")` | 入力途中の読みの補完候補。良い順です。 |
-| `learn(reading, lengths, texts, context="")` | 文節 `i` で `texts[i]` が選ばれたことを学習し、次回から先頭に並べます。 |
+| `convert(reading, lengths=None, context="")` | `Segment(reading, candidates, descriptions)` のリスト。候補は優先度の高い順です。`lengths` で文節の区切りを指定でき、省略すると Mozc が決めます。`context` は読みの直前のテキストで、最初の文節を変換する手がかりになります。 |
+| `predict(reading, context="")` | 入力途中の読みの予測候補。優先度の高い順です。 |
+| `learn(reading, lengths, texts, context="")` | 文節 `i` で `texts[i]` が選ばれたことを学習し、次回から第一候補にします。 |
 | `clear_learning()` | 学習した内容をすべて消します。 |
 | `flush()` | 学習した内容をすぐにプロファイルへ書き込みます。閉じるときにも書き込まれます。 |
 | `close()` | 学習した内容を保存し、エンジンを解放します。 |
 | `last_error` | 直前の呼び出しが失敗した理由。成功していれば `""`。 |
-| `mozc_version` | Mozc のバージョン（例: `"2.32.5994.102"`）。 |
+| `mozc_version` | Mozc のバージョン（例: `"3.35.6354.102"`）。 |
 
 文節の長さはバイト数ではなく Unicode の文字数で数え、合計が読みの長さと一致する必要があります。`descriptions` には各候補についての Mozc の注記（例: `カタカナ`）が日本語で入り、注記がなければ `""` です。
 
 ## エラー
 
-要求どおりに処理できなかった呼び出しは `[]` または `False` を返し、理由は `last_error` で「the segment lengths do not add up to the reading's length」のような英語の文として分かります。入力された文字列が含まれることはありません。候補にないテキストがあると、`learn` は `False` を返し、何も学習しません。
+要求どおりに処理できなかった呼び出しは `[]` または `False` を返し、理由は `last_error` で確認できます。「the segment lengths do not add up to the reading's length」のような英語の文です。入力された文字列が含まれることはありません。候補にないテキストがあると、`learn` は `False` を返し、何も学習しません。
 
 ライブラリを読み込めない場合、C API のバージョンが異なる場合、Mozc を起動できない場合、`Mozc(...)` は `MozcError` を送出します。
 
 ## プロファイル
 
-プロファイルディレクトリには Mozc が学習した内容が保存され、存在しなければ作成されます。ディレクトリを指定しない `Mozc()` は Mozc の既定の場所（Linux では `~/.mozc`）を使います。Mozc はプロファイルディレクトリをプロセス単位で保持するため、1 つのプロセスで開くプロファイルは 1 つだけにしてください。閉じてから開き直すのは問題ありません。`Mozc(path, incognito=True)` は何も学習せず、プロファイルにも触れません。
+プロファイルディレクトリには Mozc が学習した内容が保存され、存在しなければ作成されます。ディレクトリを指定しない `Mozc()` は Mozc の既定の場所（Linux では、`~/.mozc` があればそこ、なければ `$XDG_CONFIG_HOME/mozc` または `~/.config/mozc`）を使います。Mozc はプロファイルディレクトリをプロセス単位で保持するため、1 つのプロセスで開くプロファイルは 1 つだけにしてください。閉じてから開き直すのは問題ありません。`Mozc(path, incognito=True)` は何も学習せず、プロファイルにも触れません。
 
 ## スレッド
 

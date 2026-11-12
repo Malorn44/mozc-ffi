@@ -58,7 +58,7 @@ just before it, and get back segments with candidates. There is no state to keep
 | `flush()` | Writes what was learned to the profile now. Closing does it too. |
 | `close()` | Saves what was learned and frees the engine. |
 | `last_error` | Why the last call failed, or `""`. |
-| `mozc_version` | Mozc's version, such as `"2.32.5994.102"`. |
+| `mozc_version` | Mozc's version, such as `"3.35.6354.102"`. |
 
 Segment lengths count Unicode characters, not bytes, and add up to the reading's length. `descriptions` has Mozc's
 note on each candidate in Japanese, such as `カタカナ`, or `""`.
@@ -75,9 +75,9 @@ can't start.
 ## Profiles
 
 The profile directory holds what Mozc learns and is created if missing. `Mozc()` with no directory uses Mozc's
-default (`~/.mozc` on Linux). Mozc keeps the profile directory per process, so open one profile per process;
-closing it and opening it again is fine. `Mozc(path, incognito=True)` learns nothing and leaves the profile
-untouched.
+default (on Linux `~/.mozc` if it exists, otherwise `$XDG_CONFIG_HOME/mozc` or `~/.config/mozc`). Mozc keeps the
+profile directory per process, so open one profile per process; closing it and opening it again is fine.
+`Mozc(path, incognito=True)` learns nothing and leaves the profile untouched.
 
 ## Threads
 

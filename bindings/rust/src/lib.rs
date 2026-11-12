@@ -195,7 +195,7 @@ impl Mozc {
         })
     }
 
-    /// Mozc's version, such as "2.32.5994.102".
+    /// Mozc's version, such as "3.35.6354.102".
     pub fn mozc_version(&self) -> String {
         // SAFETY: a static NUL-terminated string.
         unsafe { text((self.api.mozc_version)()) }

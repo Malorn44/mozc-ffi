@@ -70,7 +70,7 @@ just before it, and get back segments with candidates. There is no state to keep
 | `clear_learning()` | Forgets everything learned. |
 | `flush()` | Writes what was learned to the profile now. Dropping the `Mozc` does it too. |
 | `last_error()` | Why the last call failed, or `""`. |
-| `mozc_version()` | Mozc's version, such as `"2.32.5994.102"`. |
+| `mozc_version()` | Mozc's version, such as `"3.35.6354.102"`. |
 
 Segment lengths count Unicode characters, not bytes, and add up to the reading's length. `descriptions` has Mozc's
 note on each candidate in Japanese, such as `カタカナ`, or `""`.
@@ -86,9 +86,10 @@ returns `false`, and learns nothing, if a text isn't a candidate of its segment.
 
 ## Profiles
 
-The profile directory holds what Mozc learns and is created if missing. `None` uses Mozc's default (`~/.mozc` on
-Linux). Mozc keeps the profile directory per process, so open one profile per process; dropping it and opening it
-again is fine. Opening with `incognito` set to `true` learns nothing and leaves the profile untouched.
+The profile directory holds what Mozc learns and is created if missing. `None` uses Mozc's default (on Linux
+`~/.mozc` if it exists, otherwise `$XDG_CONFIG_HOME/mozc` or `~/.config/mozc`). Mozc keeps the profile directory
+per process, so open one profile per process; dropping it and opening it again is fine. Opening with `incognito`
+set to `true` learns nothing and leaves the profile untouched.
 
 ## Threads
 
