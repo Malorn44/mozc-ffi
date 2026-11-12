@@ -21,13 +21,13 @@ feature fetches this version's library from its
 
 ## Use
 
-```rust no_run
-use std::path::Path;
-
+```rust
 use mozc_ffi::Mozc;
 
 fn main() -> Result<(), mozc_ffi::Error> {
-    let mozc = Mozc::open(Some(Path::new("/path/to/profile")), false)?;
+    // A new profile, so nothing is learned yet. Keep yours somewhere it lasts.
+    let profile = std::env::temp_dir().join(format!("mozc-ffi-example-{}", std::process::id()));
+    let mozc = Mozc::open(Some(profile.as_path()), false)?;
     let best = |reading: &str| -> String {
         let segments = mozc.convert(reading, &[], "");
         segments.iter().map(|s| s.candidates[0].as_str()).collect()

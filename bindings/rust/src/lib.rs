@@ -1,8 +1,8 @@
 // The crate's documentation is its README, so docs.rs, crates.io and GitHub say the same, and
-// `cargo test` compiles its example.
+// `cargo test` runs its example.
 #![doc = include_str!("../README.md")]
 
-/// The Japanese README's example, compiled by `cargo test` like the English one's.
+/// The Japanese README's example, run by `cargo test` like the English one's.
 #[cfg(doctest)]
 #[doc = include_str!("../README.ja.md")]
 pub struct ReadmeJa;

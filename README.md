@@ -115,8 +115,7 @@ scripts/check.sh test rust    # one binding's tests: c, csharp, python, node, ru
 ```
 
 The tests use the library in `build/`. Each binding's tests also run the examples in its READMEs and check they
-print what their comments say (Rust's are compiled, not run). CI runs the same commands on Linux and Windows for
-every pull request.
+print what their comments say. CI runs the same commands on Linux and Windows for every pull request.
 
 ## Releases
 
