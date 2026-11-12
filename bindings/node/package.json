@@ -3,6 +3,8 @@
   "version": "0.2.0",
   "description": "Unofficial Node.js bindings for Google's Mozc kana-kanji converter, in process",
   "license": "BSD-3-Clause",
+  "homepage": "https://malorn44.github.io/mozc-ffi/node/",
+  "bugs": "https://github.com/Malorn44/mozc-ffi/issues",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Malorn44/mozc-ffi.git",

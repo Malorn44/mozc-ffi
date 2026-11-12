@@ -12,6 +12,7 @@ namespace MozcFfi
     /// <summary>A segment of the reading and its candidates, best first.</summary>
     public sealed class Segment
     {
+        /// <summary>A segment of <paramref name="reading"/>; <paramref name="descriptions"/> has one entry per candidate.</summary>
         public Segment(string reading, IReadOnlyList<string> candidates, IReadOnlyList<string> descriptions = null)
         {
             Reading = reading;
@@ -19,15 +20,20 @@ namespace MozcFfi
             Descriptions = descriptions ?? new string[candidates.Count];
         }
 
+        /// <summary>The part of the reading this segment covers, in hiragana.</summary>
         public string Reading { get; }
+
+        /// <summary>What the segment can be written as, best first.</summary>
         public IReadOnlyList<string> Candidates { get; }
 
         /// <summary>Mozc's note on each candidate (its script, an emoji's name), in Japanese; "" if none.</summary>
         public IReadOnlyList<string> Descriptions { get; }
     }
 
+    /// <summary>Mozc could not open: the native library is missing or speaks another ABI, or Mozc failed to start.</summary>
     public sealed class MozcException : Exception
     {
+        /// <summary>An exception saying why, in English.</summary>
         public MozcException(string message) : base(message) { }
     }
 
@@ -37,11 +43,13 @@ namespace MozcFfi
     /// </summary>
     public sealed class Mozc : IDisposable
     {
+        /// <summary>The C API version these bindings speak; the native library must report the same.</summary>
         public const int AbiVersion = 2;
         const int Incognito = 1;
 
         readonly Native.Handle handle;
 
+        /// <summary>Opens Mozc. Throws <see cref="MozcException"/> if it can't.</summary>
         /// <param name="profileDir">Where Mozc keeps what it learns; null for Mozc's default.</param>
         /// <param name="incognito">Learn nothing and leave the profile untouched.</param>
         public Mozc(string profileDir = null, bool incognito = false)
@@ -54,12 +62,14 @@ namespace MozcFfi
                 throw new MozcException("mozc_ffi_open failed: " + Reason());
         }
 
+        /// <summary>Mozc's version, such as "2.32.5994.102".</summary>
         public static string MozcVersion => FromUtf8(Native.mozc_ffi_mozc_version());
 
         /// <summary>Why the last Convert, Predict, Learn, ClearLearning or Flush failed; "" if it succeeded.</summary>
         public string LastError { get; private set; } = "";
 
         /// <summary>Segments of the reading; empty if it can't be converted as asked.</summary>
+        /// <param name="reading">What was typed, in hiragana.</param>
         /// <param name="lengths">Fixes the segments: one length per segment, summing to the reading's length.</param>
         /// <param name="context">The text just before the reading.</param>
         public IReadOnlyList<Segment> Convert(string reading, IReadOnlyList<int> lengths = null, string context = null)
