@@ -44,7 +44,7 @@ MOZC_FFI_API const char* mozc_ffi_mozc_version(void);
 typedef struct mozc_ffi mozc_ffi;
 typedef struct mozc_ffi_result mozc_ffi_result;
 
-/* Learn nothing and leave the profile untouched. */
+/* Learn nothing and leave the profile untouched; it need not be writable. */
 #define MOZC_FFI_INCOGNITO 1
 
 /* profile_dir holds what Mozc learns; it is created if missing. NULL or ""

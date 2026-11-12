@@ -5,6 +5,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
+#include <fstream>
 #include <memory>
 #include <mutex>
 #include <string>
@@ -65,6 +66,18 @@ constexpr char kNotSaved[] = "Mozc could not write the profile";
 
 absl::string_view View(const char* text) {
   return text == nullptr ? absl::string_view() : absl::string_view(text);
+}
+
+// Whether a file can be created in `dir`. Mozc keeps what it learns in files
+// there, and learning crashes it when it could not open them.
+bool CanWrite(const std::filesystem::path& dir) {
+  const std::filesystem::path probe = dir / ".mozc_ffi_writable";
+  if (!std::ofstream(probe).is_open()) {
+    return false;
+  }
+  std::error_code error;
+  std::filesystem::remove(probe, error);
+  return true;
 }
 
 ConversionRequest MakeRequest(const mozc_ffi& mozc,
@@ -190,15 +203,30 @@ const char* mozc_ffi_last_error(void) { return last_error; }
 
 mozc_ffi* mozc_ffi_open(const char* profile_dir, int32_t flags) {
   last_error = "";
-  if (profile_dir != nullptr && *profile_dir != '\0') {
+  const bool incognito = (flags & MOZC_FFI_INCOGNITO) != 0;
+  const bool given = profile_dir != nullptr && *profile_dir != '\0';
+  // Incognito mode leaves Mozc's default profile alone, so only a given
+  // directory is created for it, and neither has to be writable.
+  std::string dir;
+  if (given) {
+    dir = profile_dir;
+  } else if (!incognito) {
+    dir = mozc::SystemUtil::GetUserProfileDirectory();
+  }
+  if (!dir.empty()) {
     std::error_code error;
     const std::filesystem::path path(
-        std::u8string(reinterpret_cast<const char8_t*>(profile_dir)));
+        std::u8string(reinterpret_cast<const char8_t*>(dir.c_str())));
     std::filesystem::create_directories(path, error);
     if (error) {
       return Fail<mozc_ffi*>("the profile directory could not be created",
                              nullptr);
     }
+    if (!incognito && !CanWrite(path)) {
+      return Fail<mozc_ffi*>("the profile directory is not writable", nullptr);
+    }
+  }
+  if (given) {
     mozc::SystemUtil::SetUserProfileDirectory(profile_dir);
   }
   auto engine =
@@ -209,7 +237,7 @@ mozc_ffi* mozc_ffi_open(const char* profile_dir, int32_t flags) {
   auto mozc = std::make_unique<mozc_ffi>();
   mozc->engine = std::move(engine).value();
   mozc->converter = mozc->engine->GetConverter();
-  mozc->incognito = (flags & MOZC_FFI_INCOGNITO) != 0;
+  mozc->incognito = incognito;
   mozc->config = mozc::config::ConfigHandler::DefaultConfig();
   mozc->config.set_incognito_mode(mozc->incognito);
   return mozc.release();
