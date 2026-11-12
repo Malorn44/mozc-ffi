@@ -131,7 +131,36 @@ test_node() {
 }
 
 test_rust() {
-    (cd bindings/rust && cargo test)
+    # The doc tests (the READMEs' examples) open Mozc with the default library.
+    (cd bindings/rust && MOZC_FFI_LIBRARY=${MOZC_FFI_LIBRARY:-../../$library} cargo test)
+    readme_rust
+}
+
+# Runs the Rust example in each of bindings/rust's READMEs as a program with build/'s library. A
+# println! with a comment after it must print exactly that comment.
+readme_rust() {
+    local dir=build/readme-rust readme
+    mkdir -p "$dir/src"
+    cat > "$dir/Cargo.toml" << 'EOF'
+[package]
+name = "readme"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+mozc-ffi = { path = "../../bindings/rust" }
+
+[workspace]
+EOF
+    for readme in bindings/rust/README.md bindings/rust/README.ja.md; do
+        echo "-- $readme"
+        # shellcheck disable=SC2016 # the backticks are Markdown's code fence, not a command
+        sed -n '/^```rust$/,/^```$/p' "$readme" | sed '1d;$d' > "$dir/src/main.rs"
+        diff <(sed -n 's#^.*println!(.*); *// \(.*\)$#\1#p' "$dir/src/main.rs") \
+            <(MOZC_FFI_LIBRARY=${MOZC_FFI_LIBRARY:-$library} cargo run --quiet --manifest-path "$dir/Cargo.toml" | tr -d '\r')
+    done
+    echo "the READMEs' examples print what they say"
 }
 
 check_library() {

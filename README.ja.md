@@ -107,7 +107,7 @@ scripts/check.sh lint python  # lint を 1 つだけ: c, python, csharp, rust, n
 scripts/check.sh test rust    # 1 つのバインディングのテスト: c, csharp, python, node, rust
 ```
 
-テストは `build/` にあるライブラリを使います。各バインディングのテストでは、その README の使用例も実行し、コメントに書いたとおりの出力になるかを確かめます（Rust は実行せずコンパイルのみ）。CI はすべてのプルリクエストで、同じコマンドを Linux と Windows で実行します。
+テストは `build/` にあるライブラリを使います。各バインディングのテストでは、その README の使用例も実行し、コメントに書いたとおりの出力になるかを確かめます。CI はすべてのプルリクエストで、同じコマンドを Linux と Windows で実行します。
 
 ## リリース
 

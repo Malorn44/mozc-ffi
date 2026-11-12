@@ -18,13 +18,13 @@ Rust 1.88 以降が必要です。対応環境は Linux x64 と arm64（glibc 2.
 
 ## 使い方
 
-```rust no_run
-use std::path::Path;
-
+```rust
 use mozc_ffi::Mozc;
 
 fn main() -> Result<(), mozc_ffi::Error> {
-    let mozc = Mozc::open(Some(Path::new("/path/to/profile")), false)?;
+    // 新しいプロファイルなので、まだ何も学習していない。実際のプロファイルは残る場所に置く
+    let profile = std::env::temp_dir().join(format!("mozc-ffi-example-{}", std::process::id()));
+    let mozc = Mozc::open(Some(profile.as_path()), false)?;
     let best = |reading: &str| -> String {
         let segments = mozc.convert(reading, &[], "");
         segments.iter().map(|s| s.candidates[0].as_str()).collect()
