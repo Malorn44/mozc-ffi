@@ -56,8 +56,14 @@ gh attestation verify mozc-ffi-X.Y.Z-linux-x64.tar.gz -R Malorn44/mozc-ffi
   - crates.io: a trusted publisher on the `mozc-ffi` crate.
   - npm also holds the Unity package, `com.malorn44.mozc-ffi`, with the same trusted publisher.
 - The `releases` ruleset keeps `v*` tags from being moved or deleted.
-- GitHub Pages, with Source "GitHub Actions" (Settings → Pages): `docs-publish` deploys the docs site
-  there from every commit on `main` that passes CI, not only from releases.
+- Read the Docs builds the docs site from `.readthedocs.yaml`, outside this workflow: `latest` from
+  `main`, a version per release tag, and `stable`, the newest release, which the packages link to. The
+  `mozc-ffi` project on readthedocs.org has:
+  - URL versioning scheme "Multiple versions without translations": the site carries its own Japanese
+    pages under `/ja/`.
+  - Pull request builds on, so each PR gets a preview.
+  - An automation rule that activates SemVer tags, so each release gets its version without a step here.
+  - `v0.1.0` to `v0.2.0` left inactive: they predate the docs site, so they have nothing to build.
 
 ### A package's first version on npm or crates.io
 

@@ -2,7 +2,7 @@
 
 --8<-- "bindings/python/README.ja.md:guide"
 
-## API リファレンス
+## API リファレンス {#api-reference}
 
 docstring から生成しているため英語です。
 

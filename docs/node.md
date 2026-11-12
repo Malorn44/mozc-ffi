@@ -2,7 +2,7 @@
 
 --8<-- "bindings/node/README.md:guide"
 
-## API reference
+## API reference {#api-reference}
 
 The package's type definitions, `index.d.ts`, with their doc comments:
 

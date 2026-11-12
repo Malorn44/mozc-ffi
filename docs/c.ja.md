@@ -1,8 +1,8 @@
 # C
 
---8<-- "README.ja.md:c"
+--8<-- "core/README.ja.md:guide"
 
-## API リファレンス
+## API リファレンス {#api-reference}
 
 ヘッダー `mozc_ffi.h` と、そのドキュメントコメント（英語）です。
 

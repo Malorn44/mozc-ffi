@@ -1,10 +1,12 @@
-# The documentation site, https://malorn44.github.io/mozc-ffi/. Built by scripts/check.sh lint docs into
-# build/site, and published from main by ci.yml's docs-publish job.
+# The documentation site, https://mozc-ffi.readthedocs.io/. Read the Docs builds it (.readthedocs.yaml) for
+# main (latest), each release (stable is the newest) and each pull request; scripts/check.sh lint docs
+# builds it into build/site.
 #
 # Each language's page includes the "guide" section of that binding's README, so the site, the
 # registries and GitHub say the same. Pages come in English (name.md) and Japanese (name.ja.md, under /ja/).
 site_name: mozc-ffi
-site_url: https://malorn44.github.io/mozc-ffi/
+# Read the Docs sets the version's own URL; local builds use stable's.
+site_url: !ENV [READTHEDOCS_CANONICAL_URL, "https://mozc-ffi.readthedocs.io/stable/"]
 site_description: Unofficial C API and bindings for Google's Mozc Japanese kana-kanji converter, in process
 repo_url: https://github.com/Malorn44/mozc-ffi
 repo_name: Malorn44/mozc-ffi
@@ -62,8 +64,34 @@ plugins:
             members_order: source
             heading_level: 3
 
+hooks:
+  - scripts/docs_hooks.py
+
+# What the pages include from outside docs/, so mkdocs serve rebuilds when they change.
+watch:
+  - README.md
+  - README.ja.md
+  - core/README.md
+  - core/README.ja.md
+  - core/mozc_ffi.h
+  - bindings/python/README.md
+  - bindings/python/README.ja.md
+  - bindings/python/mozc_ffi
+  - bindings/csharp/README.md
+  - bindings/csharp/README.ja.md
+  - bindings/csharp/MozcFfi.cs
+  - bindings/unity/README.md
+  - bindings/unity/README.ja.md
+  - bindings/node/README.md
+  - bindings/node/README.ja.md
+  - bindings/node/index.d.ts
+  - bindings/rust/README.md
+  - bindings/rust/README.ja.md
+  - scripts/docs_hooks.py
+
 markdown_extensions:
   - admonition
+  - attr_list
   - tables
   - toc:
       permalink: true

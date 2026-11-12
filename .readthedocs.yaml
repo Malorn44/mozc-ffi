@@ -1,0 +1,16 @@
+# Read the Docs builds the docs site (mkdocs.yml) at https://mozc-ffi.readthedocs.io/: main as "latest", each
+# release tag, with the newest as "stable", and each pull request. .github/RELEASING.md has the project's settings.
+version: 2
+
+build:
+  os: ubuntu-24.04
+  tools:
+    python: "3.12"
+
+python:
+  install:
+    - requirements: scripts/requirements-docs.txt
+
+mkdocs:
+  configuration: mkdocs.yml
+  fail_on_warning: true

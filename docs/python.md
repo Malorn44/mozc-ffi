@@ -2,6 +2,6 @@
 
 --8<-- "bindings/python/README.md:guide"
 
-## API reference
+## API reference {#api-reference}
 
 ::: mozc_ffi

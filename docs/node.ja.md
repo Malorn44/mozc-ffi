@@ -2,7 +2,7 @@
 
 --8<-- "bindings/node/README.ja.md:guide"
 
-## API リファレンス
+## API リファレンス {#api-reference}
 
 パッケージの型定義 `index.d.ts` と、そのドキュメントコメント（英語）です。
 

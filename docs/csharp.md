@@ -2,6 +2,8 @@
 
 --8<-- "bindings/csharp/README.md:guide"
 
-## API reference
+## API reference {#api-reference}
 
-The table above lists every call. The package carries `MozcFfi.xml`, so the same doc comments show in your editor.
+Every public type and member, with the doc comments the package carries in `MozcFfi.xml`.
+
+<!-- csharp-api -->
