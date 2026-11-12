@@ -17,7 +17,7 @@ Unity は NuGet ではなく npm 形式のレジストリからパッケージ�
     { "name": "npm", "url": "https://registry.npmjs.org", "scopes": ["com.malorn44"] }
   ],
   "dependencies": {
-    "com.malorn44.mozc-ffi": "0.2.0"
+    "com.malorn44.mozc-ffi": "0.3.0"
   }
 }
 ```
