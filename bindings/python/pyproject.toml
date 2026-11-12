@@ -12,7 +12,10 @@ keywords = ["japanese", "mozc", "ime", "kana-kanji"]
 requires-python = ">=3.11"
 
 [project.urls]
+Documentation = "https://mozc-ffi.readthedocs.io/stable/python/"
 Repository = "https://github.com/Malorn44/mozc-ffi"
+Changelog = "https://github.com/Malorn44/mozc-ffi/blob/main/CHANGELOG.md"
+Issues = "https://github.com/Malorn44/mozc-ffi/issues"
 
 [tool.setuptools]
 packages = ["mozc_ffi"]
