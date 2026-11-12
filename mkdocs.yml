@@ -1,0 +1,93 @@
+# The documentation site, https://mozc-ffi.readthedocs.io/. Read the Docs builds it (.readthedocs.yaml) for
+# main (latest), each release (stable is the newest) and each pull request; scripts/check.sh lint docs
+# builds it into build/site.
+#
+# Each language's page includes the "guide" section of that binding's README, so the site, the
+# registries and GitHub say the same. Pages come in English (name.md) and Japanese (name.ja.md, under /ja/).
+site_name: mozc-ffi
+# Read the Docs sets the version's own URL; local builds use stable's.
+site_url: !ENV [READTHEDOCS_CANONICAL_URL, "https://mozc-ffi.readthedocs.io/stable/"]
+site_description: Unofficial C API and bindings for Google's Mozc Japanese kana-kanji converter, in process
+repo_url: https://github.com/Malorn44/mozc-ffi
+repo_name: Malorn44/mozc-ffi
+edit_uri: ""
+copyright: BSD-3-Clause. Not affiliated with Google.
+
+theme:
+  name: material
+  features:
+    - content.code.copy
+    - navigation.sections
+    - search.highlight
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      toggle: { icon: material/weather-night, name: Dark }
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      toggle: { icon: material/weather-sunny, name: Light }
+
+nav:
+  - index.md
+  - concepts.md
+  - Languages:
+      - python.md
+      - csharp.md
+      - unity.md
+      - node.md
+      - rust.md
+      - c.md
+
+plugins:
+  - search
+  - i18n:
+      docs_structure: suffix
+      languages:
+        - locale: en
+          name: English
+          default: true
+          build: true
+        - locale: ja
+          name: 日本語
+          build: true
+          nav_translations:
+            Languages: 言語
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: [bindings/python]
+          options:
+            show_root_heading: false
+            show_source: false
+            members_order: source
+            heading_level: 3
+
+# What the pages include from outside docs/, so mkdocs serve rebuilds when they change.
+watch:
+  - core/README.md
+  - core/README.ja.md
+  - core/mozc_ffi.h
+  - bindings/python/README.md
+  - bindings/python/README.ja.md
+  - bindings/python/mozc_ffi
+  - bindings/csharp/README.md
+  - bindings/csharp/README.ja.md
+  - bindings/unity/README.md
+  - bindings/unity/README.ja.md
+  - bindings/node/README.md
+  - bindings/node/README.ja.md
+  - bindings/node/index.d.ts
+  - bindings/rust/README.md
+  - bindings/rust/README.ja.md
+
+markdown_extensions:
+  - attr_list
+  - toc:
+      permalink: true
+  - pymdownx.highlight
+  - pymdownx.superfences
+  - pymdownx.snippets:
+      base_path: [.]
+      check_paths: true

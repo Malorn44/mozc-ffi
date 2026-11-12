@@ -9,56 +9,44 @@ install. Not affiliated with Google.
 Every call is self-contained. You pass a reading and, optionally, segment lengths and the text before it, and get
 back segments with candidates. Picks you `learn` rank first next time.
 
-| | |
-|---|---|
-| `core/` | The C API (`mozc_ffi.h`) and its implementation over Mozc's converter |
-| `bindings/python/` | Python bindings (ctypes, one module) and tests |
-| `bindings/csharp/` | C# bindings (netstandard2.0, works in Unity) and tests |
-| `bindings/unity/` | The Unity package's own files (`package.json` and `.meta` files); `scripts/package.sh` adds the C# bindings and the library |
-| `bindings/rust/` | Rust bindings (the `mozc-ffi` crate) and tests |
-| `bindings/node/` | Node.js bindings (koffi, with TypeScript types) and tests |
-| `scripts/` | The build scripts, `check.sh` (every lint check and test), the pinned Mozc commit (`MOZC_COMMIT`) |
-| `tests/` | `chat.tsv`, everyday chat sentences used by every test suite, and `smoke.c`, a C program using the API |
+```python
+from mozc_ffi import Mozc
 
-## Install
+with Mozc("/path/to/profile") as mozc:
+    segments = mozc.convert("きょうはさむいですね")
+    print("".join(s.candidates[0] for s in segments))  # 今日は寒いですね
+```
+
+## Languages
 
 Each package comes with the library already built, for Linux x64 and arm64 (glibc 2.28 or later) and Windows x64.
+The [documentation](https://mozc-ffi.readthedocs.io/stable/) has a guide and an API reference for each language,
+and each language's README has the same guide.
 
-| | Install | Needs |
-|---|---|---|
-| Python | `pip install mozc-ffi` | Python 3.11+ |
-| C# | `dotnet add package MozcFfi` | .NET Standard 2.0 |
-| Unity | The `com.malorn44.mozc-ffi` package (below) | Unity 2021.3+, Windows or Linux x64 |
-| Node.js | `npm install mozc-ffi` | Node.js 22+ |
-| Rust | `cargo add mozc-ffi --features download` | Rust 1.88+ |
-| C | An archive from [Releases](https://github.com/Malorn44/mozc-ffi/releases) | |
+| | Install | Needs | |
+|---|---|---|---|
+| Python | `pip install mozc-ffi` | Python 3.11+ | [README](bindings/python/README.md) |
+| C# | `dotnet add package MozcFfi` | .NET Standard 2.0 | [README](bindings/csharp/README.md) |
+| Unity | The `com.malorn44.mozc-ffi` package on npm | Unity 2021.3+, Windows or Linux x64 | [README](bindings/unity/README.md) |
+| Node.js | `npm install mozc-ffi` | Node.js 22+ | [README](bindings/node/README.md) |
+| Rust | `cargo add mozc-ffi --features download` | Rust 1.88+ | [README](bindings/rust/README.md) |
+| C | An archive from [Releases](https://github.com/Malorn44/mozc-ffi/releases) | A C99 compiler | [README](core/README.md) |
 
-The Rust crate holds only the bindings, because the library is larger than crates.io allows. Its `download` feature
-fetches the library from this version's release when building, and checks its SHA-256 (it needs `curl` and `tar`):
+## Repository
 
-```sh
-cargo add mozc-ffi --features download
-```
+| | |
+|---|---|
+| `core/` | The C API (`mozc_ffi.h`), its implementation over Mozc's converter, and the C README |
+| `bindings/python/` | Python bindings (ctypes, one module), their README and tests |
+| `bindings/csharp/` | C# bindings (netstandard2.0, works in Unity), their README and tests |
+| `bindings/unity/` | The Unity package's own files (`package.json`, the README and `.meta` files); `scripts/package.sh` adds the C# bindings and the library |
+| `bindings/rust/` | Rust bindings (the `mozc-ffi` crate), their README and tests |
+| `bindings/node/` | Node.js bindings (koffi, with TypeScript types), their README and tests |
+| `scripts/` | The build scripts, `check.sh` (every lint check and test), the pinned Mozc commit (`MOZC_COMMIT`) |
+| `tests/` | `chat.tsv`, everyday chat sentences used by every test suite, and `smoke.c`, a C program using the API |
+| `docs/`, `mkdocs.yml` | The [documentation site](https://mozc-ffi.readthedocs.io/stable/), built by Read the Docs (`.readthedocs.yaml`). Each language's page includes its README |
 
-To ship your program, copy the library (`mozc_ffi::DOWNLOADED_LIBRARY`) next to your executable. Without the feature,
-download the archive for your platform from [Releases](https://github.com/Malorn44/mozc-ffi/releases) and either put
-`libmozc_ffi.so` or `mozc_ffi.dll` next to your executable, or set `MOZC_FFI_LIBRARY` to its path.
-
-For Unity, add npm as a scoped registry and the package to your project's `Packages/manifest.json`, next to what is
-already there. The package holds the C# bindings and the library, and later versions show up in the Package Manager:
-
-```json
-{
-  "scopedRegistries": [
-    { "name": "npm", "url": "https://registry.npmjs.org", "scopes": ["com.malorn44"] }
-  ],
-  "dependencies": {
-    "com.malorn44.mozc-ffi": "0.2.0"
-  }
-}
-```
-
-The archives hold the header, the library and, on Windows, the import library. `SHA256SUMS` lists their checksums.
+Each package's README is the one in its `bindings/` directory, and is what PyPI, NuGet, npm and crates.io show.
 
 ## Build
 
@@ -81,51 +69,11 @@ Mode. Build from a clone on a Windows drive (not `\\wsl.localhost`):
 
 The DLL links the C++ runtime statically, so it needs no Visual C++ Redistributable.
 
-## Use
-
-```python
-from mozc_ffi import Mozc
-
-with Mozc("/path/to/profile") as mozc:
-    mozc.convert("ここではきものをぬぐ", [3, 5, 2])  # [Segment("ここで", [...]), Segment("はきものを", ["履物を", ...]), ...]
-    mozc.predict("ありがと")                     # ["ありがとう", ...]
-    mozc.learn("かんじ", [3], ["感じ"])           # 感じ ranks first next time
-```
-
-```csharp
-using var mozc = new MozcFfi.Mozc(profileDir);
-var segments = mozc.Convert("きょうはさむいですね");   // segments[0].Candidates[0] == "今日は"
-mozc.Learn("かんじ", new[] { 3 }, new[] { "感じ" });
-```
-
-```rust
-let mozc = mozc_ffi::Mozc::open(Some(Path::new("/path/to/profile")), false)?;
-let segments = mozc.convert("ここではきものをぬぐ", &[3, 5, 2], "");
-mozc.learn("かんじ", &[3], &["感じ"], "");
-```
-
-```js
-const { Mozc } = require('mozc-ffi');
-const mozc = new Mozc('/path/to/profile');
-mozc.convert('ここではきものをぬぐ', [3, 5, 2]);
-mozc.learn('かんじ', [3], ['感じ']);
-mozc.close();
-```
-
-Each binding loads the library when it opens Mozc: from `MOZC_FFI_LIBRARY`, next to the program (or package), or the
-system's library path. It stays loaded until the process exits.
-
-A call that can't do what was asked returns nothing (an empty list, or false); `last_error` then says why, in English,
-without ever quoting what was typed.
-
-Segment lengths count Unicode characters. Mozc keeps the profile directory per process, so open one profile per
-process. `incognito` learns nothing.
-
 ## Test
 
 ```sh
 scripts/check.sh              # every lint check, then every test
-scripts/check.sh lint python  # one lint check: c, python, csharp, rust, node, scripts
+scripts/check.sh lint python  # one lint check: c, python, csharp, rust, node, scripts, docs
 scripts/check.sh test rust    # one binding's tests: c, csharp, python, node, rust
 ```
 
