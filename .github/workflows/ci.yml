@@ -28,7 +28,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        check: [c, python, csharp, rust, node, scripts]
+        check: [c, python, csharp, rust, node, scripts, docs]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - if: matrix.check == 'node'

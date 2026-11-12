@@ -78,7 +78,7 @@ class Mozc {
     if (!this._handle) throw new Error(`mozc_ffi_open failed: ${this._api.lastError()}`);
   }
 
-  /** Mozc's version, such as "2.32.5994.102". */
+  /** Mozc's version, such as "3.35.6354.102". */
   static get mozcVersion() {
     return load().mozcVersion();
   }

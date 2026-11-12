@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import os
 import shutil
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -16,7 +17,7 @@ ROOT = Path(__file__).resolve().parents[2]
 LIBRARY = "mozc_ffi.dll" if sys.platform == "win32" else "libmozc_ffi.so"
 os.environ.setdefault("MOZC_FFI_LIBRARY", str(ROOT / "build" / LIBRARY))
 
-from mozc_ffi import ABI_VERSION, Mozc  # noqa: E402
+from mozc_ffi import ABI_VERSION, Mozc, MozcError  # noqa: E402
 
 PROFILE = ""
 
@@ -146,6 +147,41 @@ class LearnTest(unittest.TestCase):
             self.assertNotEqual(before[1], before[0])
             mozc.learn("はし", [2], [before[1]])
             self.assertEqual(mozc.convert("はし", [2])[0].candidates[0], before[0])
+
+
+LEARN_WITH_THE_DEFAULT_PROFILE = """
+from mozc_ffi import Mozc
+
+with Mozc() as mozc:
+    pick = mozc.convert("かんじ", [3])[0].candidates[1]
+    assert mozc.learn("かんじ", [3], [pick]), mozc.last_error
+"""
+
+
+@unittest.skipUnless(sys.platform.startswith("linux"), "uses Linux permissions and Mozc's default profile on Linux")
+class ProfileDirectoryTest(unittest.TestCase):
+    @unittest.skipIf(hasattr(os, "geteuid") and os.geteuid() == 0, "root can write to any directory")
+    def test_a_profile_that_cannot_be_written_does_not_open(self) -> None:
+        with tempfile.TemporaryDirectory() as parent:
+            profile = Path(parent) / "profile"
+            profile.mkdir()
+            profile.chmod(0o555)
+            try:
+                with self.assertRaisesRegex(MozcError, "the profile directory is not writable"):
+                    Mozc(profile)
+            finally:
+                profile.chmod(0o755)
+
+    def test_the_default_profile_is_created_under_a_bare_home(self) -> None:
+        # Its own process: this one already has its profile.
+        with tempfile.TemporaryDirectory() as home:
+            env = {**os.environ, "HOME": home, "PYTHONPATH": str(Path(__file__).parent)}
+            env.pop("XDG_CONFIG_HOME", None)
+            run = subprocess.run(
+                [sys.executable, "-c", LEARN_WITH_THE_DEFAULT_PROFILE], env=env, capture_output=True, text=True
+            )
+            self.assertEqual(run.returncode, 0, run.stderr)
+            self.assertTrue((Path(home) / ".config" / "mozc").is_dir())
 
 
 if __name__ == "__main__":
