@@ -14,7 +14,7 @@ not affiliated with Google.
 pip install mozc-ffi
 ```
 
-It needs Python 3.11 or later. Each wheel has the library inside, so there is nothing else to install.
+It needs Python 3.10 or later. Each wheel has the library inside, so there is nothing else to install.
 
 ## Platforms
 

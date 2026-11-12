@@ -25,7 +25,7 @@ and each language's README has the same guide.
 
 | | Install | Needs | |
 |---|---|---|---|
-| Python | `pip install mozc-ffi` | Python 3.11+ | [README](bindings/python/README.md) |
+| Python | `pip install mozc-ffi` | Python 3.10+ | [README](bindings/python/README.md) |
 | C# | `dotnet add package MozcFfi` | .NET Standard 2.0 | [README](bindings/csharp/README.md) |
 | Unity | The `com.malorn44.mozc-ffi` package on npm | Unity 2021.3+, Windows or Linux x64 | [README](bindings/unity/README.md) |
 | Node.js | `npm install mozc-ffi` | Node.js 22+ | [README](bindings/node/README.md) |

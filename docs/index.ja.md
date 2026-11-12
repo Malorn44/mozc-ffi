@@ -18,7 +18,7 @@ with Mozc("/path/to/profile") as mozc:
 
 | | インストール | 必要なもの |
 |---|---|---|
-| [Python](python.md) | `pip install mozc-ffi` | Python 3.11 以降 |
+| [Python](python.md) | `pip install mozc-ffi` | Python 3.10 以降 |
 | [C#](csharp.md) | `dotnet add package MozcFfi` | .NET Standard 2.0 |
 | [Unity](unity.md) | npm の `com.malorn44.mozc-ffi` パッケージ | Unity 2021.3 以降、Windows または Linux の x64 |
 | [Node.js](node.md) | `npm install mozc-ffi` | Node.js 22 以降 |

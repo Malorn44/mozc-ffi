@@ -97,7 +97,7 @@ jobs:
         include:
           - { arch: x64, binding: c }
           - { arch: x64, binding: csharp }
-          - { arch: x64, binding: python, version: "3.11" }
+          - { arch: x64, binding: python, version: "3.10" }
           - { arch: x64, binding: python, version: "3.x" }
           - { arch: x64, binding: node, version: "22" }
           - { arch: x64, binding: node, version: "lts/*" }
