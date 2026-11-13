@@ -2,6 +2,13 @@
 
 English | [日本語](https://github.com/Malorn44/mozc-ffi/blob/main/README.ja.md)
 
+[![PyPI](https://img.shields.io/pypi/v/mozc-ffi)](https://pypi.org/project/mozc-ffi/)
+[![NuGet](https://img.shields.io/nuget/v/MozcFfi)](https://www.nuget.org/packages/MozcFfi)
+[![npm](https://img.shields.io/npm/v/mozc-ffi)](https://www.npmjs.com/package/mozc-ffi)
+[![Unity](https://img.shields.io/npm/v/com.malorn44.mozc-ffi?label=unity)](https://www.npmjs.com/package/com.malorn44.mozc-ffi)
+[![crates.io](https://img.shields.io/crates/v/mozc-ffi)](https://crates.io/crates/mozc-ffi)
+[![Docs](https://img.shields.io/readthedocs/mozc-ffi)](https://mozc-ffi.readthedocs.io/)
+
 Unofficial C API and bindings for [Mozc](https://github.com/google/mozc), Google's open-source Japanese
 kana-kanji converter. Mozc runs inside your process, with its dictionary built in: no `mozc_server`, no IPC, no
 install. Not affiliated with Google.
