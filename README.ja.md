@@ -2,6 +2,13 @@
 
 [English](README.md) | 日本語
 
+[![PyPI](https://img.shields.io/pypi/v/mozc-ffi)](https://pypi.org/project/mozc-ffi/)
+[![NuGet](https://img.shields.io/nuget/v/MozcFfi)](https://www.nuget.org/packages/MozcFfi)
+[![npm](https://img.shields.io/npm/v/mozc-ffi)](https://www.npmjs.com/package/mozc-ffi)
+[![Unity](https://img.shields.io/npm/v/com.malorn44.mozc-ffi?label=unity)](https://www.npmjs.com/package/com.malorn44.mozc-ffi)
+[![crates.io](https://img.shields.io/crates/v/mozc-ffi)](https://crates.io/crates/mozc-ffi)
+[![Docs](https://img.shields.io/readthedocs/mozc-ffi)](https://mozc-ffi.readthedocs.io/)
+
 Google 製のオープンソース日本語かな漢字変換エンジン [Mozc](https://github.com/google/mozc) を使うための、非公式の C API と各言語のバインディングです。Mozc は辞書を内蔵した状態でアプリと同じプロセス内で動作するため、`mozc_server` も IPC も Mozc 本体のインストールも不要です。Google とは関係ありません。
 
 呼び出しはそれぞれ独立しています。読みと、必要に応じて文節の長さと直前のテキストを渡すと、文節ごとの候補が返ってきます。`learn` で学習させた候補は、次回から第一候補になります。
